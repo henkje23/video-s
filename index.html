@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Al mijn video's</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1 1%22%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #10131b;
+        color: #f4f5f8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 72px 24px;
+        background:
+          radial-gradient(ellipse at 50% -18%, #373d62 0, transparent 55%),
+          radial-gradient(ellipse at 0% 60%, #191d2b 0, transparent 45%),
+          #10131b;
+      }
+
+      main {
+        width: min(100%, 900px);
+        margin: 0 auto;
+      }
+
+      .intro {
+        margin-bottom: 36px;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: #aeb8ff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.5rem, 6vw, 4rem);
+        letter-spacing: -0.045em;
+        line-height: 1.05;
+      }
+
+      .intro p {
+        margin: 0;
+        color: #a7adbd;
+        font-size: 1.1rem;
+      }
+
+      .video-card {
+        overflow: hidden;
+        border: 1px solid #ffffff20;
+        border-radius: 22px;
+        background: #191d28;
+        box-shadow: 0 28px 80px #00000055;
+      }
+
+      .video-card h2 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin: 0;
+        padding: 20px 24px;
+        font-size: 1.15rem;
+      }
+
+      .video-year {
+        padding: 6px 10px;
+        border: 1px solid #aeb8ff35;
+        border-radius: 999px;
+        color: #c1c8ff;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .video-frame {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border: 0;
+        background: #08090d;
+      }
+
+      .videos-list {
+        display: grid;
+        gap: 24px;
+      }
+
+      .page-tabs {
+        display: flex;
+        gap: 10px;
+        width: fit-content;
+        margin: 0 0 24px;
+        padding: 6px;
+        border: 1px solid #ffffff1a;
+        border-radius: 14px;
+        background: #191d28;
+      }
+
+      .page-tab {
+        padding: 10px 18px;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        color: #a7adbd;
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+      }
+
+      .page-tab[aria-pressed="true"] {
+        background: #343b63;
+        color: #fff;
+      }
+
+      .shorts-feed {
+        display: grid;
+        justify-items: center;
+        gap: 28px;
+      }
+
+      .short-card {
+        width: min(100%, 390px);
+        overflow: hidden;
+        border: 1px solid #ffffff20;
+        border-radius: 22px;
+        background: #191d28;
+        box-shadow: 0 28px 80px #00000055;
+      }
+
+      .short-card h2 {
+        margin: 0;
+        padding: 16px 18px;
+        font-size: 1rem;
+      }
+
+      .short-frame {
+        display: block;
+        width: 100%;
+        aspect-ratio: 9 / 16;
+        border: 0;
+        background: #08090d;
+      }
+
+      .shorts-empty {
+        padding: 28px;
+        border: 1px dashed #ffffff35;
+        border-radius: 18px;
+        color: #a7adbd;
+        text-align: center;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 32px 14px;
+        }
+
+        .intro {
+          margin-bottom: 24px;
+        }
+
+        h1 {
+          font-size: clamp(2.35rem, 12vw, 3.25rem);
+        }
+
+        .video-card h2 {
+          padding: 16px;
+          font-size: 1rem;
+        }
+
+        .video-card {
+          border-radius: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="intro">
+        <p class="eyebrow">Mijn video's</p>
+        <h1>Al mijn video's</h1>
+        <p>Een overzicht van mijn video's.</p>
+      </header>
+      <nav class="page-tabs" aria-label="Videopagina">
+        <button
+          class="page-tab"
+          type="button"
+          aria-controls="videos-page"
+          aria-pressed="true"
+          data-page="videos"
+        >
+          Video's
+        </button>
+        <button
+          class="page-tab"
+          type="button"
+          aria-controls="shorts-page"
+          aria-pressed="false"
+          data-page="shorts"
+        >
+          Shorts
+        </button>
+      </nav>
+      <section id="videos-page" aria-label="Video's">
+        <div class="videos-list" id="videos-list"></div>
+      </section>
+      <section id="shorts-page" aria-label="Shorts" hidden>
+        <div class="shorts-feed" id="shorts-feed"></div>
+      </section>
+    </main>
+    <script>
+      const videos = [
+        {
+          id: "1YHwt7mSV6_g-aLsyHm4bZkvyGlCK7rJk",
+          title: "Efteling",
+          year: "2026",
+          type: "video",
+        },
+        // Voeg video's toe met type "video" of "short".
+        // { id: "GOOGLE_DRIVE_ID", title: "Mijn Short", type: "short" },
+        {
+          id: "1YHwt7mSV6_g-aLsyHm4bZkvyGlCK7rJk",
+          title: "Efteling",
+          year: "2026",
+          type: "short",
+        },
+      ];
+
+      const regularVideos = videos.filter((video) => video.type === "video");
+      const shorts = videos.filter((video) => video.type === "short");
+      const videosList = document.querySelector("#videos-list");
+      const shortsFeed = document.querySelector("#shorts-feed");
+      const shortObserver = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            const frame = entry.target;
+
+            if (entry.isIntersecting) {
+              if (!frame.src || frame.src === "about:blank") {
+                frame.src = frame.dataset.src;
+              }
+            } else if (frame.src && frame.src !== "about:blank") {
+              frame.src = "about:blank";
+            }
+          }
+        },
+        { threshold: 0.6 },
+      );
+
+      function createDriveFrame(video, className) {
+        const frame = document.createElement("iframe");
+        frame.className = className;
+        const previewUrl = new URL(
+          `https://drive.google.com/file/d/${encodeURIComponent(video.id)}/preview`,
+        );
+
+        if (video.type === "short") {
+          previewUrl.searchParams.set("autoplay", "1");
+          previewUrl.searchParams.set("mute", "1");
+        }
+
+        if (video.type === "short") {
+          frame.dataset.src = previewUrl.toString();
+          frame.src = "about:blank";
+        } else {
+          frame.src = previewUrl.toString();
+        }
+        frame.title = video.title;
+        frame.allow = "autoplay; fullscreen";
+        frame.allowFullscreen = true;
+        return frame;
+      }
+
+      for (const video of regularVideos) {
+        const card = document.createElement("article");
+        card.className = "video-card";
+
+        const title = document.createElement("h2");
+        title.textContent = video.title;
+
+        if (video.year) {
+          const year = document.createElement("span");
+          year.className = "video-year";
+          year.textContent = video.year;
+          title.append(year);
+        }
+
+        card.append(title, createDriveFrame(video, "video-frame"));
+        videosList.append(card);
+      }
+
+      if (shorts.length === 0) {
+        const emptyMessage = document.createElement("p");
+        emptyMessage.className = "shorts-empty";
+        emptyMessage.textContent =
+          'Nog geen Shorts. Voeg een video toe aan de "videos"-lijst in de code.';
+        shortsFeed.append(emptyMessage);
+      }
+
+      for (const short of shorts) {
+        const card = document.createElement("article");
+        card.className = "short-card";
+
+        const title = document.createElement("h2");
+        title.textContent = short.title;
+
+        const frame = createDriveFrame(short, "short-frame");
+        card.append(title, frame);
+        shortsFeed.append(card);
+        shortObserver.observe(frame);
+      }
+
+      document.querySelectorAll(".page-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const showShorts = tab.dataset.page === "shorts";
+          document.querySelector("#videos-page").hidden = showShorts;
+          document.querySelector("#shorts-page").hidden = !showShorts;
+
+          document.querySelectorAll(".page-tab").forEach((button) => {
+            button.setAttribute("aria-pressed", String(button === tab));
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
