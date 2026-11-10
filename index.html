@@ -4,10 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Al mijn video's</title>
+    <meta name="theme-color" content="#10131b" />
+    <meta
+      name="description"
+      content="Bekijk video's en Shorts in mijn persoonlijke videokanaal."
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect x=%222%22 y=%222%22 width=%2260%22 height=%2260%22 rx=%2218%22 fill=%22%23343b63%22/%3E%3Cpath d=%22M26 17.5v29L48 32z%22 fill=%22white%22/%3E%3C/svg%3E"
+      type="image/png"
+      sizes="192x192"
+      href="./app-icon-192.png"
     />
+    <link rel="apple-touch-icon" href="./app-icon-192.png" />
     <style>
       :root {
         color-scheme: dark;
@@ -30,7 +39,7 @@
       body {
         min-height: 100vh;
         margin: 0;
-        padding: 72px 24px;
+        padding: clamp(24px, 6vh, 72px) 24px;
         background:
           radial-gradient(ellipse at 50% -18%, #373d62 0, transparent 55%),
           radial-gradient(ellipse at 0% 60%, #191d2b 0, transparent 45%),
@@ -97,8 +106,9 @@
 
       .video-frame {
         display: block;
-        width: 100%;
+        width: min(100%, 128dvh);
         aspect-ratio: 16 / 9;
+        margin: 0 auto;
         border: 0;
         background: #08090d;
       }
@@ -137,10 +147,11 @@
 
       .shorts-feed {
         display: grid;
-        grid-auto-rows: 100%;
+        grid-auto-rows: 100dvh;
         justify-items: center;
-        height: min(78dvh, 900px);
-        min-height: 520px;
+        align-items: center;
+        width: 100%;
+        height: 100dvh;
         overflow-y: auto;
         overscroll-behavior-y: contain;
         scroll-snap-type: y mandatory;
@@ -149,8 +160,9 @@
 
       .short-card {
         position: relative;
-        width: min(100%, 390px, 44dvh);
-        height: 100%;
+        width: min(100vw, 56.25dvh, 480px);
+        height: min(100dvh, 177.78vw, 853px);
+        aspect-ratio: 9 / 16;
         min-height: 0;
         overflow: hidden;
         border: 1px solid #ffffff26;
@@ -422,6 +434,121 @@
         display: none !important;
       }
 
+      body.shorts-mode {
+        height: 100dvh;
+        min-height: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .shorts-mode main {
+        width: 100%;
+        height: 100dvh;
+        margin: 0;
+      }
+
+      .shorts-mode .intro {
+        display: none;
+      }
+
+      .shorts-mode .page-tabs {
+        position: fixed;
+        z-index: 8;
+        top: max(10px, env(safe-area-inset-top));
+        left: 50%;
+        gap: 4px;
+        margin: 0;
+        max-width: calc(100vw - 20px);
+        padding: 5px;
+        flex-wrap: wrap;
+        justify-content: center;
+        border-color: #ffffff20;
+        background: #10131bbd;
+        backdrop-filter: blur(12px);
+        transform: translateX(-50%);
+      }
+
+      .shorts-mode .page-tab {
+        padding: 9px 13px;
+        font-size: 0.88rem;
+      }
+
+      .shorts-mode .shorts-feed {
+        height: 100dvh;
+      }
+
+      .shorts-mode .short-card {
+        border-radius: 0;
+      }
+
+      .shorts-mode .account-panel {
+        position: fixed;
+        z-index: 10;
+        top: max(62px, calc(env(safe-area-inset-top) + 56px));
+        right: max(12px, env(safe-area-inset-right));
+        display: none;
+        width: min(460px, calc(100vw - 24px));
+        max-height: calc(100dvh - 80px);
+        margin: 0;
+        overflow-y: auto;
+        box-shadow: 0 18px 55px #000b;
+      }
+
+      .shorts-mode .account-panel[open] {
+        display: block;
+      }
+
+      .shorts-mode .account-panel summary {
+        display: none;
+      }
+
+      @media (min-width: 700px) {
+        .shorts-mode .short-card {
+          border: 1px solid #ffffff26;
+          border-radius: 18px;
+        }
+      }
+
+      @media (min-width: 601px) and (max-height: 700px) {
+        body {
+          padding-top: 12px;
+          padding-bottom: 12px;
+        }
+
+        .intro {
+          margin-bottom: 12px;
+        }
+
+        .eyebrow {
+          margin-bottom: 4px;
+        }
+
+        h1 {
+          margin-bottom: 6px;
+          font-size: clamp(2rem, 7vh, 3rem);
+        }
+
+        .intro p {
+          font-size: 0.95rem;
+        }
+
+        .page-tabs {
+          margin-bottom: 10px;
+        }
+
+        .account-panel {
+          margin-bottom: 10px;
+        }
+
+        .video-card h2 {
+          padding: 10px 16px;
+        }
+
+        .video-frame {
+          width: min(100%, 82dvh);
+        }
+      }
+
       @media (max-width: 600px) {
         body {
           padding: 32px 14px;
@@ -441,18 +568,6 @@
         }
 
         .video-card {
-          border-radius: 16px;
-        }
-
-        .shorts-feed {
-          width: 100%;
-          height: calc(100dvh - 198px);
-          min-height: 430px;
-          margin: 0 auto;
-        }
-
-        .short-card {
-          width: min(100%, 420px, 42dvh);
           border-radius: 16px;
         }
 
@@ -488,8 +603,21 @@
         >
           Shorts
         </button>
+        <button
+          id="shorts-account-toggle"
+          class="page-tab"
+          type="button"
+          aria-controls="account-panel"
+          aria-expanded="false"
+          hidden
+        >
+          Account
+        </button>
+        <button id="install-app-button" class="page-tab" type="button" hidden>
+          Installeren
+        </button>
       </nav>
-      <details class="account-panel">
+      <details id="account-panel" class="account-panel">
         <summary id="account-summary">Inloggen om te liken en reageren</summary>
         <div class="account-content">
           <div class="account-fields">
@@ -597,6 +725,12 @@
           year: "2026",
           type: "video",
         },
+        {
+          id: "1BjGZhpulyzJ9BsT1ioojzvOKymUaN9qM",
+          title: "dierentuin frankrijk 2026",
+          year: "2026",
+          type: "video",
+        },
         // Voeg video's toe met type "video" of "short".
         // { id: "GOOGLE_DRIVE_ID", title: "Mijn Short", type: "short" },
         {
@@ -635,6 +769,10 @@
       const accountEmail = document.querySelector("#account-email");
       const accountPassword = document.querySelector("#account-password");
       const accountName = document.querySelector("#account-name");
+      const shortsAccountToggle = document.querySelector(
+        "#shorts-account-toggle",
+      );
+      const installAppButton = document.querySelector("#install-app-button");
       const configuredUrl = window.SHORTS_SUPABASE_CONFIG?.url?.trim();
       const configuredKey = window.SHORTS_SUPABASE_CONFIG?.anonKey?.trim();
       const supabaseClient =
@@ -643,20 +781,52 @@
           : null;
       let currentUser = null;
       const shortCards = [];
+      let activeShortFrame = null;
+      let installPromptEvent = null;
+
+      function stopActiveShort() {
+        if (!activeShortFrame) return;
+        activeShortFrame.src = "about:blank";
+        activeShortFrame = null;
+      }
+
+      function activateMostVisibleShort() {
+        if (document.hidden || document.querySelector("#shorts-page").hidden) {
+          stopActiveShort();
+          return;
+        }
+
+        const feedBounds = shortsFeed.getBoundingClientRect();
+        let candidate = null;
+        let largestVisiblePart = 0;
+        for (const shortCard of shortCards) {
+          const bounds = shortCard.card.getBoundingClientRect();
+          const visibleHeight = Math.max(
+            0,
+            Math.min(bounds.bottom, feedBounds.bottom) -
+              Math.max(bounds.top, feedBounds.top),
+          );
+          const visiblePart = visibleHeight / bounds.height;
+          if (visiblePart > largestVisiblePart) {
+            largestVisiblePart = visiblePart;
+            candidate = shortCard.frame;
+          }
+        }
+
+        if (largestVisiblePart < 0.6 || !candidate) {
+          stopActiveShort();
+          return;
+        }
+        if (activeShortFrame === candidate) return;
+
+        stopActiveShort();
+        candidate.src = candidate.dataset.src;
+        activeShortFrame = candidate;
+      }
 
       const shortObserver = new IntersectionObserver(
-        (entries) => {
-          for (const entry of entries) {
-            const frame = entry.target;
-
-            if (entry.isIntersecting) {
-              if (!frame.src || frame.src === "about:blank") {
-                frame.src = frame.dataset.src;
-              }
-            }
-          }
-        },
-        { threshold: 0.6 },
+        () => window.requestAnimationFrame(activateMostVisibleShort),
+        { root: shortsFeed, threshold: [0, 0.6, 1] },
       );
 
       function createDriveFrame(video, className) {
@@ -1118,6 +1288,7 @@
         const shortCard = {
           short,
           card,
+          frame,
           likeButton,
           commentButton,
           commentList,
@@ -1236,39 +1407,97 @@
         card.append(frame, title, actions, status, comments);
         shortsFeed.append(card);
         renderShortCard(shortCard);
-        shortObserver.observe(frame);
+        shortObserver.observe(card);
       }
 
       if (shorts.length > 0) loadAuthSession();
 
-      function showShortFromHash() {
-        const target = document.getElementById(window.location.hash.slice(1));
-        if (!target || !target.classList.contains("short-card")) return;
-        document.querySelector("#videos-page").hidden = true;
-        document.querySelector("#shorts-page").hidden = false;
-        document.querySelectorAll(".page-tab").forEach((button) => {
+      function setActivePage(showShorts) {
+        document.querySelector("#videos-page").hidden = showShorts;
+        document.querySelector("#shorts-page").hidden = !showShorts;
+        document.body.classList.toggle("shorts-mode", showShorts);
+        shortsAccountToggle.hidden = !showShorts;
+
+        document.querySelectorAll(".page-tab[data-page]").forEach((button) => {
           button.setAttribute(
             "aria-pressed",
-            String(button.dataset.page === "shorts"),
+            String(button.dataset.page === (showShorts ? "shorts" : "videos")),
           );
         });
-        target.scrollIntoView();
+        if (!showShorts) {
+          accountPanel.open = false;
+          stopActiveShort();
+        } else {
+          window.requestAnimationFrame(activateMostVisibleShort);
+        }
       }
 
-      document.querySelectorAll(".page-tab").forEach((tab) => {
-        tab.addEventListener("click", () => {
-          const showShorts = tab.dataset.page === "shorts";
-          document.querySelector("#videos-page").hidden = showShorts;
-          document.querySelector("#shorts-page").hidden = !showShorts;
+      function showShortFromHash() {
+        const target = document.getElementById(window.location.hash.slice(1));
+        if (!target || !target.classList.contains("short-card")) return false;
+        setActivePage(true);
+        target.scrollIntoView();
+        window.requestAnimationFrame(activateMostVisibleShort);
+        return true;
+      }
 
-          document.querySelectorAll(".page-tab").forEach((button) => {
-            button.setAttribute("aria-pressed", String(button === tab));
-          });
+      document.querySelectorAll(".page-tab[data-page]").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          setActivePage(tab.dataset.page === "shorts");
         });
       });
 
+      shortsAccountToggle.addEventListener("click", () => {
+        accountPanel.open = !accountPanel.open;
+        shortsAccountToggle.setAttribute(
+          "aria-expanded",
+          String(accountPanel.open),
+        );
+      });
+      accountPanel.addEventListener("toggle", () => {
+        shortsAccountToggle.setAttribute(
+          "aria-expanded",
+          String(accountPanel.open),
+        );
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) stopActiveShort();
+        else window.requestAnimationFrame(activateMostVisibleShort);
+      });
+      window.addEventListener("resize", () => {
+        window.requestAnimationFrame(activateMostVisibleShort);
+      });
+
+      window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        installPromptEvent = event;
+        installAppButton.hidden = false;
+      });
+      installAppButton.addEventListener("click", async () => {
+        if (!installPromptEvent) return;
+        await installPromptEvent.prompt();
+        await installPromptEvent.userChoice;
+        installPromptEvent = null;
+        installAppButton.hidden = true;
+      });
+      window.addEventListener("appinstalled", () => {
+        installPromptEvent = null;
+        installAppButton.hidden = true;
+      });
+      if (
+        "serviceWorker" in navigator &&
+        (location.protocol === "https:" || location.hostname === "localhost")
+      ) {
+        navigator.serviceWorker.register("./sw.js").catch((error) => {
+          console.error(
+            "Webapp offline-ondersteuning registreren mislukt.",
+            error,
+          );
+        });
+      }
+
       window.addEventListener("hashchange", showShortFromHash);
-      showShortFromHash();
+      if (!showShortFromHash()) setActivePage(false);
     </script>
   </body>
 </html>
