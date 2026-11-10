@@ -137,31 +137,277 @@
 
       .shorts-feed {
         display: grid;
+        grid-auto-rows: 100%;
         justify-items: center;
-        gap: 28px;
+        height: min(78dvh, 900px);
+        min-height: 520px;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        scroll-snap-type: y mandatory;
+        scrollbar-width: thin;
       }
 
       .short-card {
-        width: min(100%, 390px);
+        position: relative;
+        width: min(100%, 390px, 44dvh);
+        height: 100%;
+        min-height: 0;
         overflow: hidden;
-        border: 1px solid #ffffff20;
+        border: 1px solid #ffffff26;
         border-radius: 22px;
-        background: #191d28;
-        box-shadow: 0 28px 80px #00000055;
+        background: #08090d;
+        box-shadow: 0 24px 70px #00000070;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+      }
+
+      .short-card::after {
+        position: absolute;
+        z-index: 1;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: 180px;
+        background: linear-gradient(transparent, #000b);
+        content: "";
+        pointer-events: none;
       }
 
       .short-card h2 {
+        position: absolute;
+        z-index: 2;
+        right: 68px;
+        bottom: 20px;
+        left: 18px;
         margin: 0;
-        padding: 16px 18px;
-        font-size: 1rem;
+        font-size: 1.05rem;
+        line-height: 1.35;
+        text-shadow: 0 2px 8px #000;
       }
 
       .short-frame {
+        position: absolute;
+        inset: 0;
         display: block;
         width: 100%;
-        aspect-ratio: 9 / 16;
+        height: 100%;
         border: 0;
         background: #08090d;
+      }
+
+      .short-actions {
+        position: absolute;
+        z-index: 3;
+        right: 10px;
+        bottom: 68px;
+        display: grid;
+        justify-items: center;
+        gap: 14px;
+      }
+
+      .short-action {
+        display: grid;
+        justify-items: center;
+        gap: 3px;
+        min-width: 48px;
+        padding: 8px 6px;
+        border: 1px solid #ffffff1c;
+        border-radius: 999px;
+        background: #10131bba;
+        color: #fff;
+        font: inherit;
+        font-size: 0.75rem;
+        font-weight: 650;
+        cursor: pointer;
+        backdrop-filter: blur(8px);
+      }
+
+      .short-action-icon {
+        font-size: 1.3rem;
+        line-height: 1;
+      }
+
+      .short-action[aria-pressed="true"] {
+        color: #ff6b8b;
+      }
+
+      .short-comments {
+        position: absolute;
+        z-index: 4;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: grid;
+        gap: 10px;
+        max-height: 62%;
+        padding: 18px 16px max(16px, env(safe-area-inset-bottom));
+        border-radius: 18px 18px 0 0;
+        background: #171923f5;
+        box-shadow: 0 -12px 35px #0008;
+      }
+
+      .short-comment-form {
+        display: flex;
+        gap: 8px;
+      }
+
+      .short-comment-form button {
+        padding: 9px 12px;
+        border: 0;
+        border-radius: 9px;
+        background: #343b63;
+        color: #fff;
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+      }
+
+      .short-comment-input {
+        min-width: 0;
+        flex: 1;
+        padding: 9px 10px;
+        border: 1px solid #ffffff24;
+        border-radius: 10px;
+        background: #10131b;
+        color: inherit;
+        font: inherit;
+      }
+
+      .short-comment-list {
+        display: grid;
+        gap: 6px;
+        overflow: auto;
+        margin: 0;
+        padding: 0;
+        color: #c5c9d4;
+        overflow-wrap: anywhere;
+        list-style: none;
+      }
+
+      .short-comment-list li strong {
+        margin-right: 6px;
+        color: #fff;
+      }
+
+      .short-status {
+        position: absolute;
+        z-index: 3;
+        right: 76px;
+        bottom: 68px;
+        left: 14px;
+        margin: 0;
+        padding: 8px 10px;
+        border-radius: 9px;
+        background: #10131bd9;
+        color: #ffcf8a;
+        font-size: 0.85rem;
+        pointer-events: none;
+      }
+
+      .short-status:empty {
+        display: none;
+      }
+
+      .account-panel {
+        margin: 0 0 18px;
+        border: 1px solid #ffffff20;
+        border-radius: 14px;
+        background: #191d28;
+        color: #d7d9e1;
+      }
+
+      .account-panel summary {
+        padding: 12px 16px;
+        font-weight: 650;
+        cursor: pointer;
+      }
+
+      .account-content {
+        display: grid;
+        gap: 10px;
+        padding: 0 16px 14px;
+      }
+
+      .account-fields {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .account-fields input {
+        min-width: 0;
+        padding: 10px;
+        border: 1px solid #ffffff24;
+        border-radius: 9px;
+        background: #10131b;
+        color: #fff;
+        font: inherit;
+      }
+
+      .account-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .account-controls button {
+        padding: 9px 12px;
+        border: 0;
+        border-radius: 9px;
+        background: #343b63;
+        color: #fff;
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+      }
+
+      .account-status {
+        margin: 0;
+        color: #aeb8ff;
+        font-size: 0.9rem;
+      }
+
+      .account-status[data-error="true"] {
+        color: #ffcf8a;
+      }
+
+      .recovery-panel {
+        display: grid;
+        gap: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #ffffff20;
+      }
+
+      .recovery-panel input {
+        min-width: 0;
+        padding: 10px;
+        border: 1px solid #ffffff24;
+        border-radius: 9px;
+        background: #10131b;
+        color: #fff;
+        font: inherit;
+      }
+
+      .recovery-panel button {
+        width: fit-content;
+        padding: 9px 12px;
+        border: 0;
+        border-radius: 9px;
+        background: #343b63;
+        color: #fff;
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+      }
+
+      .recovery-code {
+        padding: 12px;
+        border: 1px dashed #aeb8ff80;
+        border-radius: 9px;
+        color: #dce0ff;
+        font-family: ui-monospace, monospace;
+        overflow-wrap: anywhere;
+        user-select: all;
       }
 
       .shorts-empty {
@@ -197,6 +443,22 @@
         .video-card {
           border-radius: 16px;
         }
+
+        .shorts-feed {
+          width: 100%;
+          height: calc(100dvh - 198px);
+          min-height: 430px;
+          margin: 0 auto;
+        }
+
+        .short-card {
+          width: min(100%, 420px, 42dvh);
+          border-radius: 16px;
+        }
+
+        .account-fields {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -227,6 +489,97 @@
           Shorts
         </button>
       </nav>
+      <details class="account-panel">
+        <summary id="account-summary">Inloggen om te liken en reageren</summary>
+        <div class="account-content">
+          <div class="account-fields">
+            <input
+              id="account-name"
+              type="text"
+              maxlength="40"
+              autocomplete="nickname"
+              placeholder="Weergavenaam (bij account maken)"
+              aria-label="Weergavenaam"
+            />
+            <input
+              id="account-email"
+              type="email"
+              autocomplete="email"
+              placeholder="E-mailadres"
+              aria-label="E-mailadres"
+              required
+            />
+            <input
+              id="account-password"
+              type="password"
+              minlength="8"
+              autocomplete="current-password"
+              placeholder="Wachtwoord (minimaal 8 tekens)"
+              aria-label="Wachtwoord"
+              required
+            />
+          </div>
+          <div class="account-controls">
+            <button id="sign-in-button" type="button">Inloggen</button>
+            <button id="sign-up-button" type="button">Account maken</button>
+            <button id="new-recovery-code-button" type="button" hidden>
+              Herstelcode maken
+            </button>
+            <button id="sign-out-button" type="button" hidden>Uitloggen</button>
+          </div>
+          <section
+            id="recovery-code-result"
+            class="recovery-panel"
+            hidden
+            aria-live="polite"
+          >
+            <strong>Bewaar deze herstelcode op een veilige plek</strong>
+            <p>
+              Je ziet hem maar één keer. Hij verloopt na één jaar en wordt
+              ongeldig zodra je hem gebruikt.
+            </p>
+            <code id="recovery-code" class="recovery-code"></code>
+            <button id="copy-recovery-code" type="button">Code kopiëren</button>
+          </section>
+          <form id="password-recovery-form" class="recovery-panel">
+            <strong>Wachtwoord vergeten?</strong>
+            <input
+              id="recovery-email"
+              type="email"
+              autocomplete="email"
+              placeholder="E-mailadres"
+              aria-label="E-mailadres voor herstel"
+              required
+            />
+            <input
+              id="recovery-token"
+              type="text"
+              autocomplete="one-time-code"
+              placeholder="Eenmalige herstelcode"
+              aria-label="Eenmalige herstelcode"
+              required
+            />
+            <input
+              id="recovery-new-password"
+              type="password"
+              minlength="8"
+              autocomplete="new-password"
+              placeholder="Nieuw wachtwoord (minimaal 8 tekens)"
+              aria-label="Nieuw wachtwoord"
+              required
+            />
+            <button id="reset-password-button" type="submit">
+              Wachtwoord herstellen
+            </button>
+          </form>
+          <p
+            id="account-status"
+            class="account-status"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </div>
+      </details>
       <section id="videos-page" aria-label="Video's">
         <div class="videos-list" id="videos-list"></div>
       </section>
@@ -234,6 +587,8 @@
         <div class="shorts-feed" id="shorts-feed"></div>
       </section>
     </main>
+    <script src="./supabase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
       const videos = [
         {
@@ -250,12 +605,45 @@
           year: "2026",
           type: "short",
         },
+        {
+          id: "1BjGZhpulyzJ9BsT1ioojzvOKymUaN9qM",
+          title: "dierentuin frankrijk 2026",
+          year: "2026",
+          type: "short",
+        },
       ];
 
       const regularVideos = videos.filter((video) => video.type === "video");
       const shorts = videos.filter((video) => video.type === "short");
       const videosList = document.querySelector("#videos-list");
       const shortsFeed = document.querySelector("#shorts-feed");
+      const accountSummary = document.querySelector("#account-summary");
+      const accountStatus = document.querySelector("#account-status");
+      const accountFields = document.querySelector(".account-fields");
+      const signInButton = document.querySelector("#sign-in-button");
+      const signUpButton = document.querySelector("#sign-up-button");
+      const signOutButton = document.querySelector("#sign-out-button");
+      const newRecoveryCodeButton = document.querySelector(
+        "#new-recovery-code-button",
+      );
+      const recoveryCodeResult = document.querySelector(
+        "#recovery-code-result",
+      );
+      const recoveryCode = document.querySelector("#recovery-code");
+      const recoveryForm = document.querySelector("#password-recovery-form");
+      const accountPanel = document.querySelector(".account-panel");
+      const accountEmail = document.querySelector("#account-email");
+      const accountPassword = document.querySelector("#account-password");
+      const accountName = document.querySelector("#account-name");
+      const configuredUrl = window.SHORTS_SUPABASE_CONFIG?.url?.trim();
+      const configuredKey = window.SHORTS_SUPABASE_CONFIG?.anonKey?.trim();
+      const supabaseClient =
+        configuredUrl && configuredKey && window.supabase?.createClient
+          ? window.supabase.createClient(configuredUrl, configuredKey)
+          : null;
+      let currentUser = null;
+      const shortCards = [];
+
       const shortObserver = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
@@ -265,8 +653,6 @@
               if (!frame.src || frame.src === "about:blank") {
                 frame.src = frame.dataset.src;
               }
-            } else if (frame.src && frame.src !== "about:blank") {
-              frame.src = "about:blank";
             }
           }
         },
@@ -276,6 +662,7 @@
       function createDriveFrame(video, className) {
         const frame = document.createElement("iframe");
         frame.className = className;
+        frame.loading = "lazy";
         const previewUrl = new URL(
           `https://drive.google.com/file/d/${encodeURIComponent(video.id)}/preview`,
         );
@@ -295,6 +682,332 @@
         frame.allow = "autoplay; fullscreen";
         frame.allowFullscreen = true;
         return frame;
+      }
+
+      function setAccountStatus(message, isError = false) {
+        accountStatus.textContent = message;
+        accountStatus.dataset.error = String(isError);
+      }
+
+      function renderAccount(user) {
+        currentUser = user;
+        if (user) {
+          accountSummary.textContent = `Ingelogd als ${user.user_metadata?.display_name || user.email}`;
+          accountFields.hidden = true;
+          signInButton.hidden = true;
+          signUpButton.hidden = true;
+          newRecoveryCodeButton.hidden = false;
+          signOutButton.hidden = false;
+          setAccountStatus("Je kunt nu likes geven en reacties plaatsen.");
+        } else {
+          accountSummary.textContent = "Inloggen om te liken en reageren";
+          accountFields.hidden = false;
+          signInButton.hidden = false;
+          signUpButton.hidden = false;
+          newRecoveryCodeButton.hidden = true;
+          signOutButton.hidden = true;
+        }
+      }
+
+      async function createRecoveryCode() {
+        if (!supabaseClient || !currentUser) {
+          setAccountStatus("Log in om een herstelcode te maken.", true);
+          return;
+        }
+
+        newRecoveryCodeButton.disabled = true;
+        recoveryCodeResult.hidden = true;
+        setAccountStatus("Herstelcode wordt gemaakt...");
+        try {
+          const { data, error } = await supabaseClient.functions.invoke(
+            "create-recovery-code",
+          );
+          if (error || !data?.code) {
+            setAccountStatus(
+              `Herstelcode maken mislukt: ${error?.message || "onverwacht antwoord van de server."}`,
+              true,
+            );
+            return;
+          }
+
+          recoveryCode.textContent = data.code;
+          recoveryCodeResult.hidden = false;
+          setAccountStatus(
+            "Bewaar de herstelcode nu. Om een nieuwe te maken, wordt deze code ongeldig.",
+          );
+        } catch (error) {
+          setAccountStatus(`Herstelcode maken mislukt: ${error.message}`, true);
+        } finally {
+          newRecoveryCodeButton.disabled = false;
+        }
+      }
+
+      async function refreshShortCard(shortCard) {
+        if (!supabaseClient) return;
+        const { data: counts, error: countsError } = await supabaseClient.rpc(
+          "get_short_like_counts",
+        );
+        if (countsError) {
+          shortCard.status.textContent = `Likes laden mislukt: ${countsError.message}`;
+          return;
+        }
+
+        const likeCount =
+          counts.find((count) => count.short_id === shortCard.short.id)
+            ?.like_count ?? 0;
+        let liked = false;
+        if (currentUser) {
+          const { data, error } = await supabaseClient
+            .from("shorts_likes")
+            .select("short_id")
+            .eq("short_id", shortCard.short.id)
+            .eq("user_id", currentUser.id)
+            .maybeSingle();
+          if (error) {
+            shortCard.status.textContent = `Jouw like laden mislukt: ${error.message}`;
+            return;
+          }
+          liked = Boolean(data);
+        }
+
+        shortCard.likeCount = Number(likeCount);
+        shortCard.liked = liked;
+        renderShortCard(shortCard);
+      }
+
+      async function refreshComments(shortCard) {
+        if (!supabaseClient) {
+          shortCard.status.textContent =
+            "Stel Supabase in om reacties te laden en te plaatsen.";
+          return;
+        }
+
+        const { data, error, count } = await supabaseClient
+          .from("shorts_comments")
+          .select("id, display_name, body, created_at", { count: "exact" })
+          .eq("short_id", shortCard.short.id)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        if (error) {
+          shortCard.status.textContent = `Reacties laden mislukt: ${error.message}`;
+          return;
+        }
+
+        shortCard.comments = data;
+        shortCard.commentCount = count ?? data.length;
+        renderShortCard(shortCard);
+      }
+
+      function renderShortCard(shortCard) {
+        const { likeButton, commentButton, commentList, commentPanel } =
+          shortCard;
+        const totalComments = shortCard.commentCount;
+        likeButton.setAttribute("aria-pressed", String(shortCard.liked));
+        likeButton.querySelector(".short-action-icon").textContent =
+          shortCard.liked ? "♥" : "♡";
+        likeButton.querySelector(".short-action-label").textContent =
+          shortCard.likeCount === 1 ? "1 like" : `${shortCard.likeCount} likes`;
+        commentButton.setAttribute(
+          "aria-expanded",
+          String(!commentPanel.hidden),
+        );
+        commentButton.querySelector(".short-action-label").textContent =
+          totalComments === 1 ? "1 reactie" : `${totalComments} reacties`;
+
+        commentList.replaceChildren();
+        for (const comment of shortCard.comments) {
+          const item = document.createElement("li");
+          const name = document.createElement("strong");
+          name.textContent = comment.display_name;
+          const body = document.createElement("span");
+          body.textContent = comment.body;
+          item.append(name, body);
+          commentList.append(item);
+        }
+      }
+
+      async function loadAuthSession() {
+        if (!supabaseClient) {
+          accountPanel.open = true;
+          setAccountStatus(
+            configuredUrl && configuredKey
+              ? "De Supabase-client kon niet worden geladen. Controleer je internetverbinding en laad de pagina opnieuw."
+              : "Supabase is nog niet ingesteld. Vul de project-URL en publishable/anon key in supabase-config.js in.",
+            true,
+          );
+          return;
+        }
+
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) {
+          setAccountStatus(
+            `Inloggen controleren mislukt: ${error.message}`,
+            true,
+          );
+          return;
+        }
+        renderAccount(data.session?.user ?? null);
+        await Promise.all(shortCards.map(refreshShortCard));
+      }
+
+      async function authenticate(action) {
+        if (!supabaseClient) {
+          setAccountStatus(
+            "Supabase is nog niet ingesteld. Vul eerst supabase-config.js in.",
+            true,
+          );
+          return;
+        }
+
+        const email = accountEmail.value.trim();
+        const password = accountPassword.value;
+        if (!email || !password) {
+          setAccountStatus("Vul je e-mailadres en wachtwoord in.", true);
+          return;
+        }
+
+        setAccountStatus("Even geduld...");
+        let result;
+        try {
+          result =
+            action === "sign-in"
+              ? await supabaseClient.auth.signInWithPassword({
+                  email,
+                  password,
+                })
+              : await supabaseClient.auth.signUp({
+                  email,
+                  password,
+                  options: {
+                    data: {
+                      display_name: (
+                        accountName.value.trim() || email.split("@")[0]
+                      )
+                        .slice(0, 40)
+                        .trim(),
+                    },
+                  },
+                });
+        } catch (error) {
+          setAccountStatus(`Inloggen mislukt: ${error.message}`, true);
+          return;
+        }
+        if (result.error) {
+          setAccountStatus(`Inloggen mislukt: ${result.error.message}`, true);
+          return;
+        }
+
+        if (action === "sign-up" && !result.data.session) {
+          setAccountStatus(
+            "Account aangemaakt. Bevestig je e-mailadres via de mail.",
+          );
+          return;
+        }
+
+        renderAccount(result.data.user);
+        accountPanel.open = false;
+        accountPassword.value = "";
+        if (action === "sign-up") {
+          accountPanel.open = true;
+          await createRecoveryCode();
+        }
+      }
+
+      signInButton.addEventListener("click", () => authenticate("sign-in"));
+      signUpButton.addEventListener("click", () => authenticate("sign-up"));
+      newRecoveryCodeButton.addEventListener("click", createRecoveryCode);
+      document
+        .querySelector("#copy-recovery-code")
+        .addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(recoveryCode.textContent);
+            setAccountStatus("Herstelcode gekopieerd. Bewaar hem veilig.");
+          } catch {
+            setAccountStatus(
+              "Kopiëren lukte niet. Selecteer de code en kopieer hem handmatig.",
+              true,
+            );
+          }
+        });
+
+      recoveryForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!supabaseClient) {
+          setAccountStatus(
+            "Supabase is nog niet bereikbaar. Probeer het later opnieuw.",
+            true,
+          );
+          return;
+        }
+
+        const email = document.querySelector("#recovery-email").value.trim();
+        const code = document.querySelector("#recovery-token").value.trim();
+        const password = document.querySelector("#recovery-new-password").value;
+        if (password.length < 8) {
+          setAccountStatus(
+            "Je nieuwe wachtwoord moet minimaal 8 tekens hebben.",
+            true,
+          );
+          return;
+        }
+
+        const submitButton = document.querySelector("#reset-password-button");
+        submitButton.disabled = true;
+        setAccountStatus("Wachtwoord wordt hersteld...");
+        try {
+          const { data, error } = await supabaseClient.functions.invoke(
+            "reset-password",
+            { body: { email, code, newPassword: password } },
+          );
+          if (data?.error) {
+            setAccountStatus(
+              `Wachtwoord herstellen mislukt: ${data.error}`,
+              true,
+            );
+          } else if (error) {
+            setAccountStatus(
+              `Wachtwoord herstellen mislukt: ${error.message}`,
+              true,
+            );
+          } else {
+            recoveryForm.reset();
+            recoveryCodeResult.hidden = true;
+            setAccountStatus(
+              "Wachtwoord gewijzigd. Je kunt nu inloggen met je nieuwe wachtwoord.",
+            );
+          }
+        } catch (error) {
+          setAccountStatus(
+            `Wachtwoord herstellen mislukt: ${error.message}`,
+            true,
+          );
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
+
+      signOutButton.addEventListener("click", async () => {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) {
+          setAccountStatus(`Uitloggen mislukt: ${error.message}`, true);
+          return;
+        }
+        renderAccount(null);
+        for (const shortCard of shortCards) {
+          shortCard.liked = false;
+          renderShortCard(shortCard);
+        }
+        setAccountStatus("Je bent uitgelogd.");
+      });
+
+      if (supabaseClient) {
+        supabaseClient.auth.onAuthStateChange((_event, session) => {
+          renderAccount(session?.user ?? null);
+          window.setTimeout(
+            () => Promise.all(shortCards.map(refreshShortCard)),
+            0,
+          );
+        });
       }
 
       for (const video of regularVideos) {
@@ -326,14 +1039,220 @@
       for (const short of shorts) {
         const card = document.createElement("article");
         card.className = "short-card";
+        card.id = `short-${short.id}`;
 
         const title = document.createElement("h2");
         title.textContent = short.title;
 
         const frame = createDriveFrame(short, "short-frame");
-        card.append(title, frame);
+        const actions = document.createElement("div");
+        actions.className = "short-actions";
+
+        const likeButton = document.createElement("button");
+        likeButton.className = "short-action";
+        likeButton.type = "button";
+        likeButton.setAttribute("aria-label", `Like ${short.title}`);
+        const likeIcon = document.createElement("span");
+        likeIcon.className = "short-action-icon";
+        likeIcon.setAttribute("aria-hidden", "true");
+        likeIcon.textContent = "♡";
+        const likeLabel = document.createElement("span");
+        likeLabel.className = "short-action-label";
+        likeLabel.textContent = "0 likes";
+        likeButton.append(likeIcon, likeLabel);
+
+        const commentButton = document.createElement("button");
+        commentButton.className = "short-action";
+        commentButton.type = "button";
+        commentButton.setAttribute("aria-label", `Reacties op ${short.title}`);
+        const commentIcon = document.createElement("span");
+        commentIcon.className = "short-action-icon";
+        commentIcon.setAttribute("aria-hidden", "true");
+        commentIcon.textContent = "▱";
+        const commentLabel = document.createElement("span");
+        commentLabel.className = "short-action-label";
+        commentLabel.textContent = "0 reacties";
+        commentButton.append(commentIcon, commentLabel);
+
+        const shareButton = document.createElement("button");
+        shareButton.className = "short-action";
+        shareButton.type = "button";
+        shareButton.setAttribute("aria-label", `Deel ${short.title}`);
+        const shareIcon = document.createElement("span");
+        shareIcon.className = "short-action-icon";
+        shareIcon.setAttribute("aria-hidden", "true");
+        shareIcon.textContent = "↗";
+        const shareLabel = document.createElement("span");
+        shareLabel.className = "short-action-label";
+        shareLabel.textContent = "Delen";
+        shareButton.append(shareIcon, shareLabel);
+
+        const comments = document.createElement("section");
+        comments.className = "short-comments";
+        comments.hidden = true;
+        comments.setAttribute("aria-label", `Reacties op ${short.title}`);
+
+        const commentForm = document.createElement("form");
+        commentForm.className = "short-comment-form";
+        const commentInput = document.createElement("input");
+        commentInput.className = "short-comment-input";
+        commentInput.type = "text";
+        commentInput.maxLength = 500;
+        commentInput.placeholder = "Schrijf een reactie";
+        commentInput.setAttribute("aria-label", "Schrijf een reactie");
+        commentInput.required = true;
+        const submitComment = document.createElement("button");
+        submitComment.className = "account-controls-button";
+        submitComment.type = "submit";
+        submitComment.textContent = "Plaatsen";
+        commentForm.append(commentInput, submitComment);
+
+        const commentList = document.createElement("ul");
+        commentList.className = "short-comment-list";
+        const status = document.createElement("p");
+        status.className = "short-status";
+        status.setAttribute("role", "status");
+        status.setAttribute("aria-live", "polite");
+        comments.append(commentForm, commentList);
+
+        const shortCard = {
+          short,
+          card,
+          likeButton,
+          commentButton,
+          commentList,
+          commentPanel: comments,
+          commentInput,
+          status,
+          liked: false,
+          likeCount: 0,
+          commentCount: 0,
+          comments: [],
+        };
+        shortCard.commentPanel.hidden = true;
+        shortCards.push(shortCard);
+
+        likeButton.addEventListener("click", async () => {
+          if (!currentUser) {
+            accountPanel.open = true;
+            accountStatus.textContent = "Log in om deze Short te liken.";
+            accountEmail.focus();
+            return;
+          }
+          likeButton.disabled = true;
+          const result = shortCard.liked
+            ? await supabaseClient
+                .from("shorts_likes")
+                .delete()
+                .eq("short_id", short.id)
+                .eq("user_id", currentUser.id)
+            : await supabaseClient
+                .from("shorts_likes")
+                .insert({ short_id: short.id, user_id: currentUser.id });
+          likeButton.disabled = false;
+          if (result.error) {
+            status.textContent = `Like opslaan mislukt: ${result.error.message}`;
+            return;
+          }
+          await refreshShortCard(shortCard);
+        });
+
+        commentButton.addEventListener("click", () => {
+          shortCard.commentPanel.hidden = !shortCard.commentPanel.hidden;
+          commentButton.setAttribute(
+            "aria-expanded",
+            String(!shortCard.commentPanel.hidden),
+          );
+          if (!shortCard.commentPanel.hidden) {
+            refreshComments(shortCard);
+            if (currentUser) commentInput.focus();
+          }
+        });
+
+        commentForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          if (!currentUser) {
+            accountPanel.open = true;
+            setAccountStatus("Log in om een reactie te plaatsen.");
+            accountEmail.focus();
+            return;
+          }
+          const body = commentInput.value.trim();
+          if (!body) return;
+          submitComment.disabled = true;
+          supabaseClient
+            .from("shorts_comments")
+            .insert({
+              short_id: short.id,
+              user_id: currentUser.id,
+              display_name:
+                currentUser.user_metadata?.display_name ||
+                currentUser.email.split("@")[0],
+              body,
+            })
+            .then(async ({ error }) => {
+              submitComment.disabled = false;
+              if (error) {
+                status.textContent = `Reactie plaatsen mislukt: ${error.message}`;
+                return;
+              }
+              commentInput.value = "";
+              await refreshComments(shortCard);
+              commentInput.focus();
+            })
+            .catch((error) => {
+              submitComment.disabled = false;
+              status.textContent = `Reactie plaatsen mislukt: ${error.message}`;
+            });
+        });
+
+        shareButton.addEventListener("click", async () => {
+          const shareUrl = new URL(window.location.href);
+          shareUrl.hash = card.id;
+          try {
+            if (navigator.share) {
+              await navigator.share({
+                title: short.title,
+                url: shareUrl.toString(),
+              });
+            } else if (navigator.clipboard) {
+              await navigator.clipboard.writeText(shareUrl.toString());
+              status.textContent = "Link naar deze Short gekopieerd.";
+            } else {
+              window.prompt(
+                "Kopieer de link naar deze Short:",
+                shareUrl.toString(),
+              );
+            }
+          } catch (error) {
+            if (error.name !== "AbortError") {
+              status.textContent =
+                "Delen is niet gelukt. Probeer het nog eens.";
+            }
+          }
+        });
+
+        actions.append(likeButton, commentButton, shareButton);
+        card.append(frame, title, actions, status, comments);
         shortsFeed.append(card);
+        renderShortCard(shortCard);
         shortObserver.observe(frame);
+      }
+
+      if (shorts.length > 0) loadAuthSession();
+
+      function showShortFromHash() {
+        const target = document.getElementById(window.location.hash.slice(1));
+        if (!target || !target.classList.contains("short-card")) return;
+        document.querySelector("#videos-page").hidden = true;
+        document.querySelector("#shorts-page").hidden = false;
+        document.querySelectorAll(".page-tab").forEach((button) => {
+          button.setAttribute(
+            "aria-pressed",
+            String(button.dataset.page === "shorts"),
+          );
+        });
+        target.scrollIntoView();
       }
 
       document.querySelectorAll(".page-tab").forEach((tab) => {
@@ -347,6 +1266,9 @@
           });
         });
       });
+
+      window.addEventListener("hashchange", showShortFromHash);
+      showShortFromHash();
     </script>
   </body>
 </html>
