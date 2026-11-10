@@ -145,6 +145,52 @@
         color: #fff;
       }
 
+      .video-search {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: min(100%, 520px);
+        margin: 0 0 20px;
+      }
+
+      .video-search input {
+        width: 100%;
+        min-width: 0;
+        padding: 12px 15px;
+        border: 1px solid #ffffff24;
+        border-radius: 12px;
+        outline: none;
+        background: #191d28;
+        color: #fff;
+        font: inherit;
+      }
+
+      .video-search input:focus {
+        border-color: #aeb8ff;
+        box-shadow: 0 0 0 3px #aeb8ff24;
+      }
+
+      .video-search input::placeholder {
+        color: #a7adbd;
+      }
+
+      .video-search button {
+        flex: 0 0 auto;
+        padding: 10px 13px;
+        border: 1px solid #ffffff24;
+        border-radius: 10px;
+        background: #23283a;
+        color: #fff;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .search-empty {
+        margin: 24px 0;
+        color: #a7adbd;
+        text-align: center;
+      }
+
       .shorts-feed {
         display: grid;
         grid-auto-rows: 100dvh;
@@ -473,6 +519,63 @@
         font-size: 0.88rem;
       }
 
+      .shorts-mode .video-search {
+        position: fixed;
+        z-index: 8;
+        top: max(62px, calc(env(safe-area-inset-top) + 56px));
+        left: 50%;
+        width: min(420px, calc(100vw - 28px));
+        margin: 0;
+        transform: translateX(-50%);
+      }
+
+      .shorts-mode .video-search:not(.is-open) {
+        display: none;
+      }
+
+      .shorts-mode .video-search input {
+        background: #10131bd9;
+        backdrop-filter: blur(10px);
+      }
+
+      .shorts-search-toggle {
+        display: grid;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        padding: 0;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        color: #a7adbd;
+        font-size: 1.15rem;
+        cursor: pointer;
+      }
+
+      .shorts-search-toggle:hover,
+      .shorts-search-toggle[aria-expanded="true"] {
+        background: #343b63;
+        color: #fff;
+      }
+
+      .shorts-search-toggle svg {
+        width: 19px;
+        height: 19px;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-width: 2;
+      }
+
+      .shorts-mode .search-empty {
+        position: fixed;
+        top: 50%;
+        right: 16px;
+        left: 16px;
+        z-index: 3;
+        transform: translateY(-50%);
+      }
+
       .shorts-mode .shorts-feed {
         height: 100dvh;
       }
@@ -613,10 +716,37 @@
         >
           Account
         </button>
+        <button
+          id="shorts-search-toggle"
+          class="page-tab shorts-search-toggle"
+          type="button"
+          aria-label="Zoeken"
+          aria-controls="video-search"
+          aria-expanded="false"
+          hidden
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="10.8" cy="10.8" r="6.8"></circle>
+            <path d="m16 16 4.5 4.5"></path>
+          </svg>
+        </button>
         <button id="install-app-button" class="page-tab" type="button" hidden>
           Installeren
         </button>
       </nav>
+      <form id="video-search" class="video-search" role="search">
+        <input
+          id="video-search-input"
+          type="search"
+          autocomplete="off"
+          placeholder="Zoek video's op titel..."
+          aria-label="Zoek video's en Shorts op titel"
+          aria-controls="videos-list shorts-feed"
+        />
+        <button id="clear-video-search" type="button" aria-label="Zoekopdracht wissen" hidden>
+          Wissen
+        </button>
+      </form>
       <details id="account-panel" class="account-panel">
         <summary id="account-summary">Inloggen om te liken en reageren</summary>
         <div class="account-content">
@@ -710,9 +840,11 @@
       </details>
       <section id="videos-page" aria-label="Video's">
         <div class="videos-list" id="videos-list"></div>
+        <p id="videos-search-empty" class="search-empty" hidden>Geen video's gevonden.</p>
       </section>
       <section id="shorts-page" aria-label="Shorts" hidden>
         <div class="shorts-feed" id="shorts-feed"></div>
+        <p id="shorts-search-empty" class="search-empty" hidden>Geen Shorts gevonden.</p>
       </section>
     </main>
     <script src="./supabase-config.js"></script>
@@ -735,7 +867,7 @@
         // { id: "GOOGLE_DRIVE_ID", title: "Mijn Short", type: "short" },
         {
           id: "1YHwt7mSV6_g-aLsyHm4bZkvyGlCK7rJk",
-          title: "Efteling",
+          title: "Efteling 2026",
           year: "2026",
           type: "short",
         },
@@ -751,6 +883,10 @@
       const shorts = videos.filter((video) => video.type === "short");
       const videosList = document.querySelector("#videos-list");
       const shortsFeed = document.querySelector("#shorts-feed");
+      const searchInput = document.querySelector("#video-search-input");
+      const clearSearchButton = document.querySelector("#clear-video-search");
+      const videosSearchEmpty = document.querySelector("#videos-search-empty");
+      const shortsSearchEmpty = document.querySelector("#shorts-search-empty");
       const accountSummary = document.querySelector("#account-summary");
       const accountStatus = document.querySelector("#account-status");
       const accountFields = document.querySelector(".account-fields");
@@ -772,6 +908,10 @@
       const shortsAccountToggle = document.querySelector(
         "#shorts-account-toggle",
       );
+      const shortsSearchToggle = document.querySelector(
+        "#shorts-search-toggle",
+      );
+      const videoSearchForm = document.querySelector("#video-search");
       const installAppButton = document.querySelector("#install-app-button");
       const configuredUrl = window.SHORTS_SUPABASE_CONFIG?.url?.trim();
       const configuredKey = window.SHORTS_SUPABASE_CONFIG?.anonKey?.trim();
@@ -781,6 +921,7 @@
           : null;
       let currentUser = null;
       const shortCards = [];
+      const videoCards = [];
       let activeShortFrame = null;
       let installPromptEvent = null;
 
@@ -828,6 +969,44 @@
         () => window.requestAnimationFrame(activateMostVisibleShort),
         { root: shortsFeed, threshold: [0, 0.6, 1] },
       );
+
+      function normalizeSearchText(value) {
+        return value
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLocaleLowerCase("nl")
+          .trim();
+      }
+
+      function filterVideos() {
+        const query = normalizeSearchText(searchInput.value);
+        clearSearchButton.hidden = !query;
+
+        const visibleVideoCount = videoCards.reduce((count, item) => {
+          const matches = normalizeSearchText(
+            `${item.video.title} ${item.video.year || ""}`,
+          ).includes(query);
+          item.card.hidden = !matches;
+          return count + Number(matches);
+        }, 0);
+        const visibleShortCount = shortCards.reduce((count, item) => {
+          const matches = normalizeSearchText(
+            `${item.short.title} ${item.short.year || ""}`,
+          ).includes(query);
+          item.card.hidden = !matches;
+          return count + Number(matches);
+        }, 0);
+
+        videosSearchEmpty.hidden =
+          query.length === 0 || visibleVideoCount > 0;
+        shortsSearchEmpty.hidden =
+          query.length === 0 || visibleShortCount > 0;
+        shortsFeed.hidden = query.length > 0 && visibleShortCount === 0;
+        if (document.body.classList.contains("shorts-mode")) {
+          if (query) shortsFeed.scrollTop = 0;
+          window.requestAnimationFrame(activateMostVisibleShort);
+        }
+      }
 
       function createDriveFrame(video, className) {
         const frame = document.createElement("iframe");
@@ -1196,6 +1375,7 @@
 
         card.append(title, createDriveFrame(video, "video-frame"));
         videosList.append(card);
+        videoCards.push({ video, card });
       }
 
       if (shorts.length === 0) {
@@ -1210,6 +1390,7 @@
         const card = document.createElement("article");
         card.className = "short-card";
         card.id = `short-${short.id}`;
+        card.dataset.title = short.title;
 
         const title = document.createElement("h2");
         title.textContent = short.title;
@@ -1412,11 +1593,24 @@
 
       if (shorts.length > 0) loadAuthSession();
 
+      searchInput.addEventListener("input", filterVideos);
+      document.querySelector(".video-search").addEventListener("submit", (event) => {
+        event.preventDefault();
+        searchInput.focus();
+      });
+      clearSearchButton.addEventListener("click", () => {
+        searchInput.value = "";
+        filterVideos();
+        searchInput.focus();
+      });
+      filterVideos();
+
       function setActivePage(showShorts) {
         document.querySelector("#videos-page").hidden = showShorts;
         document.querySelector("#shorts-page").hidden = !showShorts;
         document.body.classList.toggle("shorts-mode", showShorts);
         shortsAccountToggle.hidden = !showShorts;
+        shortsSearchToggle.hidden = !showShorts;
 
         document.querySelectorAll(".page-tab[data-page]").forEach((button) => {
           button.setAttribute(
@@ -1426,6 +1620,8 @@
         });
         if (!showShorts) {
           accountPanel.open = false;
+          videoSearchForm.classList.remove("is-open");
+          shortsSearchToggle.setAttribute("aria-expanded", "false");
           stopActiveShort();
         } else {
           window.requestAnimationFrame(activateMostVisibleShort);
@@ -1448,6 +1644,10 @@
       });
 
       shortsAccountToggle.addEventListener("click", () => {
+        if (!accountPanel.open) {
+          videoSearchForm.classList.remove("is-open");
+          shortsSearchToggle.setAttribute("aria-expanded", "false");
+        }
         accountPanel.open = !accountPanel.open;
         shortsAccountToggle.setAttribute(
           "aria-expanded",
@@ -1459,6 +1659,14 @@
           "aria-expanded",
           String(accountPanel.open),
         );
+      });
+      shortsSearchToggle.addEventListener("click", () => {
+        const isOpen = videoSearchForm.classList.toggle("is-open");
+        shortsSearchToggle.setAttribute("aria-expanded", String(isOpen));
+        if (isOpen) {
+          accountPanel.open = false;
+          searchInput.focus();
+        }
       });
       document.addEventListener("visibilitychange", () => {
         if (document.hidden) stopActiveShort();
