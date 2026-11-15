@@ -2638,6 +2638,24 @@
         openAccount: () => {
           accountPanel.open = true;
           accountEmail.focus();
+          // Fix voor iPhone en Chrome autoplay
+setInterval(() => {
+  document.querySelectorAll('video').forEach(video => {
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+
+    if (!video.dataset.iphoneFixGedaan) {
+      video.muted = true;
+      video.setAttribute('muted', '');
+      video.dataset.iphoneFixGedaan = 'true';
+    }
+
+    if (video.paused && !video.dataset.handmatigGepauzeerd) {
+      video.play().catch(() => {});
+    }
+  });
+}, 500);
+
         },
       };
     </script>
