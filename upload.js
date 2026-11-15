@@ -14,7 +14,7 @@
   const progressLabel = document.querySelector("#upload-progress-label");
   const status = document.querySelector("#upload-status");
   const compressHelp = document.querySelector("#upload-compress-help");
-  const maxFileSize = 50 * 1024 * 1024;
+  const maxFileSize = 200 * 1024 * 1024;
   let isUploading = false;
 
   function setStatus(message, isError = false) {
@@ -72,7 +72,7 @@
           reject(
             new Error(
               response.error ||
-                `Upload mislukt (HTTP ${request.status}). Controleer of het bestand maximaal 50 MB is.`,
+                `Upload mislukt (HTTP ${request.status}). Controleer of het bestand maximaal 200 MB is.`,
             ),
           );
           return;
@@ -128,7 +128,7 @@
     }
     if (file.size > maxFileSize) {
       compressHelp.hidden = false;
-      setStatus("Het bestand is groter dan de uploadlimiet van 50 MB.", true);
+      setStatus("Het bestand is groter dan de uploadlimiet van 200 MB.", true);
       return;
     }
     compressHelp.hidden = true;
@@ -218,7 +218,7 @@
     const tooLarge = Boolean(file && file.size > maxFileSize);
     compressHelp.hidden = !tooLarge;
     if (tooLarge) {
-      setStatus("Het bestand is groter dan de uploadlimiet van 50 MB.", true);
+      setStatus("Het bestand is groter dan de uploadlimiet van 200 MB.", true);
     } else {
       setStatus("");
     }

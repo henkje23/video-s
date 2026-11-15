@@ -263,6 +263,58 @@ create policy "Users can remove their own videos"
 
 grant delete on public.videos to authenticated;
 
+create table if not exists public.channel_subscriptions (
+  subscriber_id uuid not null references auth.users (id) on delete cascade,
+  channel_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (subscriber_id, channel_id),
+  check (subscriber_id <> channel_id)
+);
+
+create index if not exists channel_subscriptions_channel_idx
+  on public.channel_subscriptions (channel_id);
+
+alter table public.channel_subscriptions enable row level security;
+
+drop policy if exists "Users can read their own channel subscriptions"
+  on public.channel_subscriptions;
+create policy "Users can read their own channel subscriptions"
+  on public.channel_subscriptions for select to authenticated
+  using ((select auth.uid()) = subscriber_id);
+
+drop policy if exists "Users can subscribe as themselves"
+  on public.channel_subscriptions;
+create policy "Users can subscribe as themselves"
+  on public.channel_subscriptions for insert to authenticated
+  with check (
+    (select auth.uid()) = subscriber_id
+    and channel_id <> (select auth.uid())
+  );
+
+drop policy if exists "Users can unsubscribe as themselves"
+  on public.channel_subscriptions;
+create policy "Users can unsubscribe as themselves"
+  on public.channel_subscriptions for delete to authenticated
+  using ((select auth.uid()) = subscriber_id);
+
+revoke all on public.channel_subscriptions from anon, authenticated;
+grant select, insert, delete on public.channel_subscriptions to authenticated;
+
+create or replace function public.get_channel_subscriber_counts()
+returns table (channel_id uuid, subscriber_count bigint)
+language sql
+security definer
+set search_path = ''
+as $$
+  select subscriptions.channel_id, count(*)
+  from public.channel_subscriptions as subscriptions
+  group by subscriptions.channel_id;
+$$;
+
+revoke all on function public.get_channel_subscriber_counts() from public;
+grant execute on function public.get_channel_subscriber_counts()
+  to anon, authenticated;
+
 create table if not exists public.video_upload_sessions (
   id uuid primary key default gen_random_uuid(),
   release_id bigint not null unique,

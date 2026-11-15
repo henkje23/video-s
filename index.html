@@ -477,6 +477,20 @@
         text-align: center;
       }
 
+      .channel-directory {
+        margin-bottom: 28px;
+      }
+
+      .channel-directory h2 {
+        margin: 0 0 14px;
+        font-size: 1.4rem;
+      }
+
+      .channels-list {
+        display: grid;
+        gap: 12px;
+      }
+
       [hidden] {
         display: none !important;
       }
@@ -712,6 +726,15 @@
           Shorts
         </button>
         <button
+          class="page-tab"
+          type="button"
+          aria-controls="channels-page"
+          aria-pressed="false"
+          data-page="channels"
+        >
+          Kanalen
+        </button>
+        <button
           id="shorts-account-toggle"
           class="page-tab"
           type="button"
@@ -734,6 +757,15 @@
             <circle cx="10.8" cy="10.8" r="6.8"></circle>
             <path d="m16 16 4.5 4.5"></path>
           </svg>
+        </button>
+        <button
+          id="shorts-audio-toggle"
+          class="page-tab"
+          type="button"
+          aria-pressed="true"
+          hidden
+        >
+          Geluid uit
         </button>
         <button id="install-app-button" class="page-tab" type="button" hidden>
           Installeren
@@ -779,7 +811,7 @@
             <option value="video">Video</option>
             <option value="short">Short</option>
           </select>
-          <label for="upload-file">Videobestand (.mp4, maximaal 50 MB)</label>
+          <label for="upload-file">Videobestand (.mp4, maximaal 200 MB)</label>
           <input
             id="upload-file"
             name="file"
@@ -789,8 +821,14 @@
           />
           <p id="upload-compress-help" class="upload-compress-help" hidden>
             Dit bestand is te groot. Verklein het eerst op je computer met
-            <a href="https://handbrake.fr/downloads.php" target="_blank" rel="noopener noreferrer">HandBrake (gratis MP4-compressor)</a>
-            en kies daarna het kleinere MP4-bestand. Je hoeft je video niet naar een online compressor te sturen.
+            <a
+              href="https://handbrake.fr/downloads.php"
+              target="_blank"
+              rel="noopener noreferrer"
+              >HandBrake (gratis MP4-compressor)</a
+            >
+            en kies daarna het kleinere MP4-bestand. Je hoeft je video niet naar
+            een online compressor te sturen.
           </p>
           <div id="upload-progress-area" class="upload-progress-area" hidden>
             <progress id="upload-progress" max="100" value="0">0%</progress>
@@ -830,7 +868,9 @@
         </button>
       </form>
       <details id="account-panel" class="account-panel">
-        <summary id="account-summary">Inloggen om te liken en reageren</summary>
+        <summary id="account-summary">
+          log in om te liken, reageren en abboneren
+        </summary>
         <div class="account-content">
           <div class="account-fields">
             <input
@@ -932,6 +972,41 @@
           Geen Shorts gevonden.
         </p>
       </section>
+      <section id="channels-page" aria-label="Kanalen" hidden>
+        <div id="channel-directory">
+          <div class="channel-directory">
+            <h2>Kanalen</h2>
+            <p>Ontdek makers en abonneer je op hun kanaal.</p>
+          </div>
+          <div class="channels-list" id="channels-list"></div>
+          <p id="channels-empty" class="shorts-empty">
+            Er zijn nog geen kanalen. Upload een video om een kanaal te starten.
+          </p>
+        </div>
+        <section id="channel-profile" class="channel-profile" hidden>
+          <button id="channel-back-button" class="channel-back-button" type="button">
+            ← Alle kanalen
+          </button>
+          <header class="channel-profile-heading">
+            <div>
+              <p class="eyebrow">Kanaal</p>
+              <h2 id="channel-profile-name"></h2>
+              <p id="channel-profile-count"></p>
+            </div>
+            <div id="channel-profile-subscribe"></div>
+          </header>
+          <div class="videos-list" id="channel-videos-list"></div>
+          <p id="channel-videos-empty" class="shorts-empty" hidden>
+            Dit kanaal heeft nog geen video's.
+          </p>
+        </section>
+        <p
+          id="channels-status"
+          class="account-status"
+          role="status"
+          aria-live="polite"
+        ></p>
+      </section>
     </main>
     <script src="./supabase-config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -939,7 +1014,7 @@
       const videos = [
         {
           id: "1YHwt7mSV6_g-aLsyHm4bZkvyGlCK7rJk",
-          title: "Efteling",
+          title: "Efteling (eerste video op deze site)",
           year: "2026",
           type: "video",
         },
@@ -969,6 +1044,21 @@
       const shorts = videos.filter((video) => video.type === "short");
       const videosList = document.querySelector("#videos-list");
       const shortsFeed = document.querySelector("#shorts-feed");
+      const channelDirectory = document.querySelector("#channel-directory");
+      const channelsList = document.querySelector("#channels-list");
+      const channelsEmpty = document.querySelector("#channels-empty");
+      const channelProfile = document.querySelector("#channel-profile");
+      const channelProfileName = document.querySelector("#channel-profile-name");
+      const channelProfileCount = document.querySelector(
+        "#channel-profile-count",
+      );
+      const channelProfileSubscribe = document.querySelector(
+        "#channel-profile-subscribe",
+      );
+      const channelVideosList = document.querySelector("#channel-videos-list");
+      const channelVideosEmpty = document.querySelector("#channel-videos-empty");
+      const channelBackButton = document.querySelector("#channel-back-button");
+      const channelsStatus = document.querySelector("#channels-status");
       const searchInput = document.querySelector("#video-search-input");
       const clearSearchButton = document.querySelector("#clear-video-search");
       const videosSearchEmpty = document.querySelector("#videos-search-empty");
@@ -997,6 +1087,7 @@
       const shortsAccountToggle = document.querySelector(
         "#shorts-account-toggle",
       );
+      const shortsAudioToggle = document.querySelector("#shorts-audio-toggle");
       const shortsSearchToggle = document.querySelector(
         "#shorts-search-toggle",
       );
@@ -1012,15 +1103,62 @@
       const shortCards = [];
       const videoCards = [];
       const communityCards = [];
+      const channels = new Map();
+      let subscribedChannelIds = new Set();
+      let channelSubscriberCounts = new Map();
+      let activeChannelId = null;
       const renderedUploadedVideoIds = new Set();
       let activeShortFrame = null;
+      let shortsSoundEnabled = true;
       let installPromptEvent = null;
+
+      function updateShortsAudioToggle() {
+        shortsAudioToggle.textContent = shortsSoundEnabled
+          ? "Geluid uit"
+          : "Geluid aan";
+        shortsAudioToggle.setAttribute(
+          "aria-pressed",
+          String(shortsSoundEnabled),
+        );
+      }
+
+      function setShortsSoundEnabled(enabled) {
+        shortsSoundEnabled = enabled;
+        updateShortsAudioToggle();
+        const frame = activeShortFrame;
+        if (!frame) return;
+
+        if (frame instanceof HTMLVideoElement) {
+          frame.muted = !enabled;
+          if (!enabled) return;
+          frame.play().catch(() => {
+            if (activeShortFrame !== frame) return;
+            frame.muted = true;
+            shortsSoundEnabled = false;
+            updateShortsAudioToggle();
+            const shortCard = shortCards.find((entry) => entry.frame === frame);
+            if (shortCard) {
+              shortCard.status.textContent =
+                "Je browser blokkeert geluid. Tik op Geluid aan om het in te schakelen.";
+            }
+          });
+          return;
+        }
+
+        const previewUrl = new URL(frame.dataset.src);
+        previewUrl.searchParams.set("mute", enabled ? "0" : "1");
+        frame.dataset.src = previewUrl.toString();
+        frame.src = frame.dataset.src;
+      }
 
       function stopActiveShort() {
         if (!activeShortFrame) return;
-        activeShortFrame.src = "about:blank";
         if (activeShortFrame instanceof HTMLVideoElement) {
+          activeShortFrame.pause();
+          activeShortFrame.src = "about:blank";
           activeShortFrame.load();
+        } else {
+          activeShortFrame.src = "about:blank";
         }
         activeShortFrame = null;
       }
@@ -1055,9 +1193,38 @@
         if (activeShortFrame === candidate) return;
 
         stopActiveShort();
-        candidate.src = candidate.dataset.src;
-        if (candidate instanceof HTMLVideoElement) candidate.load();
+        if (candidate.getAttribute("src") === "about:blank") {
+          candidate.src = candidate.dataset.src;
+          if (candidate instanceof HTMLVideoElement) candidate.load();
+        }
         activeShortFrame = candidate;
+        if (candidate instanceof HTMLVideoElement) {
+          candidate.muted = !shortsSoundEnabled;
+          candidate.play().catch(() => {
+            if (activeShortFrame !== candidate) return;
+            const shortCard = shortCards.find(
+              (entry) => entry.frame === candidate,
+            );
+            if (shortCard) {
+              if (shortsSoundEnabled) {
+                shortsSoundEnabled = false;
+                candidate.muted = true;
+                updateShortsAudioToggle();
+                shortCard.status.textContent =
+                  "Je browser blokkeert automatisch geluid. Tik op Geluid aan om het in te schakelen.";
+                candidate.play().catch(() => {
+                  if (activeShortFrame === candidate) {
+                    shortCard.status.textContent =
+                      "Automatisch afspelen is geblokkeerd. Tik op afspelen.";
+                  }
+                });
+              } else {
+                shortCard.status.textContent =
+                  "Automatisch afspelen is geblokkeerd. Tik op afspelen.";
+              }
+            }
+          });
+        }
       }
 
       const shortObserver = new IntersectionObserver(
@@ -1111,7 +1278,10 @@
 
         if (video.type === "short") {
           previewUrl.searchParams.set("autoplay", "1");
-          previewUrl.searchParams.set("mute", "1");
+          previewUrl.searchParams.set(
+            "mute",
+            shortsSoundEnabled ? "0" : "1",
+          );
         }
 
         if (video.type === "short") {
@@ -1149,6 +1319,7 @@
           signOutButton.hidden = false;
           setAccountStatus("Je kunt nu likes geven en reacties plaatsen.");
         } else {
+          subscribedChannelIds = new Set();
           accountSummary.textContent = "Inloggen om te liken en reageren";
           accountInfoBar.hidden = true;
           accountFields.hidden = false;
@@ -1163,6 +1334,7 @@
               !user || user.id !== communityCard.short.user_id;
           }
         }
+        renderChannels();
         window.videoUploadController?.setUser(user);
       }
 
@@ -1284,6 +1456,11 @@
       }
 
       function buildUploadedCommunityControls(item, card) {
+        const status = document.createElement("p");
+        status.className =
+          item.type === "short" ? "short-status" : "video-community-status";
+        status.setAttribute("role", "status");
+        status.setAttribute("aria-live", "polite");
         const actions = document.createElement("div");
         actions.className =
           item.type === "short" ? "short-actions" : "video-community-actions";
@@ -1313,7 +1490,13 @@
         commentLabel.className = "short-action-label";
         commentLabel.textContent = "0 reacties";
         commentButton.append(commentIcon, commentLabel);
-        actions.append(likeButton, commentButton);
+        const channel = channels.get(item.user_id);
+        const subscribeButton = createChannelSubscribeButton(
+          channel,
+          true,
+          status,
+        );
+        actions.append(likeButton, commentButton, subscribeButton);
         const deleteButton = document.createElement("button");
         deleteButton.className = "short-action delete-video-button";
         deleteButton.type = "button";
@@ -1345,12 +1528,6 @@
         const commentList = document.createElement("ul");
         commentList.className = "short-comment-list";
         commentPanel.append(commentForm, commentList);
-
-        const status = document.createElement("p");
-        status.className =
-          item.type === "short" ? "short-status" : "video-community-status";
-        status.setAttribute("role", "status");
-        status.setAttribute("aria-live", "polite");
 
         const communityCard = {
           short: item,
@@ -1494,6 +1671,14 @@
             if (videoCard) videoCards.splice(videoCards.indexOf(videoCard), 1);
           }
           communityCards.splice(communityCards.indexOf(communityCard), 1);
+          const channel = channels.get(item.user_id);
+          if (channel) {
+            channel.videos = channel.videos.filter(
+              (video) => video.id !== item.id,
+            );
+            if (channel.videos.length === 0) channels.delete(item.user_id);
+            renderChannels();
+          }
           renderedUploadedVideoIds.delete(item.id);
           card.remove();
           if (item.type === "short" && shortCards.length === 0) {
@@ -1509,6 +1694,287 @@
         card.append(actions, status, commentPanel);
         renderShortCard(communityCard);
         return communityCard;
+      }
+
+      function renderChannels() {
+        channelsList.replaceChildren();
+        const sortedChannels = [...channels.values()].sort((first, second) =>
+          first.name.localeCompare(second.name, "nl"),
+        );
+        channelsEmpty.hidden = sortedChannels.length > 0;
+
+        for (const channel of sortedChannels) {
+          const card = document.createElement("article");
+          card.className = "channel-card";
+          const info = document.createElement("div");
+          info.className = "channel-card-info";
+          const name = document.createElement("strong");
+          name.textContent = channel.name;
+          const count = document.createElement("span");
+          const subscriberCount = channelSubscriberCounts.get(channel.id) || 0;
+          const videoLabel =
+            channel.videos.length === 1
+              ? "1 video"
+              : `${channel.videos.length} video's`;
+          count.textContent =
+            `${videoLabel} · ${
+              subscriberCount === 1
+                ? "1 abonnee"
+                : `${subscriberCount} abonnees`
+            }`;
+          info.append(name, count);
+
+          const actions = document.createElement("div");
+          actions.className = "channel-card-actions";
+          const openButton = document.createElement("button");
+          openButton.className = "channel-open-button";
+          openButton.type = "button";
+          openButton.textContent = "Bekijk kanaal";
+          openButton.addEventListener("click", () => openChannel(channel));
+          actions.append(openButton, createChannelSubscribeButton(channel));
+          card.append(info, actions);
+          channelsList.append(card);
+        }
+
+        if (activeChannelId) {
+          const channel = channels.get(activeChannelId);
+          if (channel) {
+            renderChannelProfile(channel);
+          } else {
+            showChannelDirectory();
+            channelsStatus.textContent = "Dit kanaal heeft geen video's meer.";
+          }
+        }
+        updateChannelSubscribeButtons();
+      }
+
+      function createChannelSubscribeButton(
+        channel,
+        compact = false,
+        statusTarget = channelsStatus,
+      ) {
+        const button = document.createElement("button");
+        button.className = compact
+          ? "channel-subscribe-button short-action channel-subscribe-compact"
+          : "channel-subscribe-button";
+        button.type = "button";
+        button.dataset.channelId = channel.id;
+        if (compact) {
+          const icon = document.createElement("span");
+          icon.className = "short-action-icon";
+          icon.setAttribute("aria-hidden", "true");
+          const label = document.createElement("span");
+          label.className = "short-action-label channel-subscribe-label";
+          button.append(icon, label);
+        }
+        updateChannelSubscribeButton(button, channel);
+        button.addEventListener("click", (event) =>
+          toggleChannelSubscription(
+            channel,
+            event.currentTarget,
+            statusTarget,
+          ),
+        );
+        return button;
+      }
+
+      function updateChannelSubscribeButton(button, channel) {
+        const isOwnChannel = currentUser?.id === channel.id;
+        const isSubscribed = subscribedChannelIds.has(channel.id);
+        const isCompact = button.classList.contains(
+          "channel-subscribe-compact",
+        );
+        button.hidden = isCompact && (isOwnChannel || isSubscribed);
+        button.disabled = isOwnChannel;
+        button.setAttribute("aria-pressed", String(isSubscribed));
+        if (isCompact) {
+          button.setAttribute(
+            "aria-label",
+            isOwnChannel
+              ? "Dit is jouw kanaal"
+              : isSubscribed
+                ? `Je bent geabonneerd op ${channel.name}`
+                : `Abonneren op ${channel.name}`,
+          );
+          button.querySelector(".short-action-icon").textContent = isSubscribed
+            ? "✓"
+            : "+";
+          button.querySelector(".channel-subscribe-label").textContent =
+            isOwnChannel ? "Jij" : isSubscribed ? "Volgend" : "Volgen";
+          return;
+        }
+
+        button.textContent = isOwnChannel
+          ? "Jouw kanaal"
+          : isSubscribed
+            ? "Geabonneerd"
+            : "Abonneren";
+      }
+
+      function updateChannelSubscribeButtons() {
+        for (const button of document.querySelectorAll(
+          ".channel-subscribe-button",
+        )) {
+          const channel = channels.get(button.dataset.channelId);
+          if (channel) updateChannelSubscribeButton(button, channel);
+        }
+      }
+
+      function renderChannelProfile(channel) {
+        channelProfileName.textContent = channel.name;
+        const subscriberCount = channelSubscriberCounts.get(channel.id) || 0;
+        const subscriberLabel =
+          subscriberCount === 1 ? "1 abonnee" : `${subscriberCount} abonnees`;
+        const videoLabel =
+          channel.videos.length === 1
+            ? "1 video"
+            : `${channel.videos.length} video's`;
+        channelProfileCount.textContent = `${videoLabel} · ${subscriberLabel}`;
+        channelProfileSubscribe.replaceChildren(
+          createChannelSubscribeButton(channel),
+        );
+        channelVideosList.replaceChildren();
+        const channelVideos = [...channel.videos].reverse();
+        channelVideosEmpty.hidden = channelVideos.length > 0;
+
+        for (const item of channelVideos) {
+          const card = document.createElement("article");
+          card.className = "channel-video-card";
+          const title = document.createElement("h3");
+          title.textContent = item.title;
+          const type = document.createElement("p");
+          type.className = "channel-video-type";
+          type.textContent = item.type === "short" ? "Short" : "Video";
+          const player = document.createElement("video");
+          player.className = "channel-video-player";
+          player.dataset.type = item.type;
+          player.controls = true;
+          player.playsInline = true;
+          player.preload = "metadata";
+          player.src = item.video_url;
+
+          const openButton = document.createElement("button");
+          openButton.className = "channel-open-video-button";
+          openButton.type = "button";
+          openButton.textContent =
+            item.type === "short" ? "Open in Shorts-feed" : "Open video en reacties";
+          openButton.addEventListener("click", () => {
+            setActivePage(item.type === "short" ? "shorts" : "videos");
+            const target = document.getElementById(
+              `${item.type === "short" ? "short" : "video"}-${item.id}`,
+            );
+            target?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+          card.append(title, type, player, openButton);
+          channelVideosList.append(card);
+        }
+
+        channelDirectory.hidden = true;
+        channelProfile.hidden = false;
+      }
+
+      function openChannel(channel) {
+        activeChannelId = channel.id;
+        renderChannelProfile(channel);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function showChannelDirectory() {
+        activeChannelId = null;
+        channelProfile.hidden = true;
+        channelDirectory.hidden = false;
+      }
+
+      async function refreshChannelSubscriptions() {
+        if (!supabaseClient) return;
+        const userId = currentUser?.id;
+        if (userId) {
+          const { data, error } = await supabaseClient
+            .from("channel_subscriptions")
+            .select("channel_id")
+            .eq("subscriber_id", userId);
+          if (error) {
+            channelsStatus.textContent = `Abonnementen laden mislukt: ${error.message}`;
+            return;
+          }
+          if (currentUser?.id !== userId) return;
+          subscribedChannelIds = new Set(data.map((item) => item.channel_id));
+        } else {
+          subscribedChannelIds = new Set();
+        }
+
+        const { data, error } = await supabaseClient.rpc(
+          "get_channel_subscriber_counts",
+        );
+        if (error) {
+          channelsStatus.textContent = `Kanaalabonnees laden mislukt: ${error.message}`;
+          return;
+        }
+        if (currentUser?.id !== userId) return;
+        channelSubscriberCounts = new Map(
+          data.map((item) => [item.channel_id, Number(item.subscriber_count)]),
+        );
+        renderChannels();
+      }
+
+      async function toggleChannelSubscription(
+        channel,
+        button,
+        statusTarget = channelsStatus,
+      ) {
+        if (!currentUser) {
+          accountPanel.open = true;
+          setAccountStatus("Log in om je op dit kanaal te abonneren.");
+          accountEmail.focus();
+          return;
+        }
+        if (currentUser.id === channel.id) return;
+
+        const subscriberId = currentUser.id;
+        const isSubscribed = subscribedChannelIds.has(channel.id);
+        button.disabled = true;
+        try {
+          const result = isSubscribed
+            ? await supabaseClient
+                .from("channel_subscriptions")
+                .delete()
+                .eq("subscriber_id", subscriberId)
+                .eq("channel_id", channel.id)
+            : await supabaseClient.from("channel_subscriptions").insert({
+                subscriber_id: subscriberId,
+                channel_id: channel.id,
+              });
+          if (result.error) {
+            statusTarget.textContent =
+              `Abonnement aanpassen mislukt: ${result.error.message}`;
+            return;
+          }
+          if (currentUser?.id !== subscriberId) return;
+
+          if (isSubscribed) {
+            subscribedChannelIds.delete(channel.id);
+            channelSubscriberCounts.set(
+              channel.id,
+              Math.max(0, (channelSubscriberCounts.get(channel.id) || 0) - 1),
+            );
+            statusTarget.textContent =
+              `Je bent afgemeld voor ${channel.name}.`;
+          } else {
+            subscribedChannelIds.add(channel.id);
+            channelSubscriberCounts.set(
+              channel.id,
+              (channelSubscriberCounts.get(channel.id) || 0) + 1,
+            );
+            statusTarget.textContent =
+              `Je bent nu geabonneerd op ${channel.name}.`;
+          }
+          renderChannels();
+        } catch (error) {
+          statusTarget.textContent =
+            `Abonnement aanpassen mislukt: ${error.message}`;
+        } finally {
+          if (button.isConnected) button.disabled = false;
+        }
       }
 
       function renderUploadedVideo(record) {
@@ -1530,6 +1996,15 @@
           return;
         }
         renderedUploadedVideoIds.add(item.id);
+        const channel = channels.get(item.user_id) || {
+          id: item.user_id,
+          name: item.author_name,
+          videos: [],
+        };
+        channel.name = item.author_name;
+        channel.videos.push(item);
+        channels.set(item.user_id, channel);
+        renderChannels();
 
         const card = document.createElement("article");
         card.dataset.title = item.title;
@@ -1542,6 +2017,7 @@
           player.className = "short-frame";
           player.controls = true;
           player.playsInline = true;
+          player.loop = true;
           player.preload = "none";
           player.dataset.src = item.video_url;
           player.src = "about:blank";
@@ -1557,6 +2033,7 @@
           shortObserver.observe(card);
         } else {
           card.className = "video-card uploaded-video-card";
+          card.id = `video-${item.id}`;
           const player = document.createElement("video");
           player.className = "video-frame";
           player.controls = true;
@@ -1594,6 +2071,7 @@
           return;
         }
         for (const record of data) renderUploadedVideo(record);
+        renderChannels();
       }
 
       async function loadAuthSession() {
@@ -1617,7 +2095,10 @@
           return;
         }
         renderAccount(data.session?.user ?? null);
-        await Promise.all(communityCards.map(refreshShortCard));
+        await Promise.all([
+          ...communityCards.map(refreshShortCard),
+          refreshChannelSubscriptions(),
+        ]);
         await loadUploadedVideos();
       }
 
@@ -1775,7 +2256,10 @@
         supabaseClient.auth.onAuthStateChange((_event, session) => {
           renderAccount(session?.user ?? null);
           window.setTimeout(() => {
-            Promise.all(communityCards.map(refreshShortCard));
+            Promise.all([
+              ...communityCards.map(refreshShortCard),
+              refreshChannelSubscriptions(),
+            ]);
             loadUploadedVideos();
           }, 0);
         });
@@ -2014,7 +2498,7 @@
         shortObserver.observe(card);
       }
 
-      if (shorts.length > 0) loadAuthSession();
+      loadAuthSession();
 
       searchInput.addEventListener("input", filterVideos);
       document
@@ -2030,17 +2514,20 @@
       });
       filterVideos();
 
-      function setActivePage(showShorts) {
-        document.querySelector("#videos-page").hidden = showShorts;
+      function setActivePage(page) {
+        const showShorts = page === "shorts";
+        document.querySelector("#videos-page").hidden = page !== "videos";
         document.querySelector("#shorts-page").hidden = !showShorts;
+        document.querySelector("#channels-page").hidden = page !== "channels";
         document.body.classList.toggle("shorts-mode", showShorts);
         shortsAccountToggle.hidden = !showShorts;
+        shortsAudioToggle.hidden = !showShorts;
         shortsSearchToggle.hidden = !showShorts;
 
         document.querySelectorAll(".page-tab[data-page]").forEach((button) => {
           button.setAttribute(
             "aria-pressed",
-            String(button.dataset.page === (showShorts ? "shorts" : "videos")),
+            String(button.dataset.page === page),
           );
         });
         if (!showShorts) {
@@ -2056,7 +2543,7 @@
       function showShortFromHash() {
         const target = document.getElementById(window.location.hash.slice(1));
         if (!target || !target.classList.contains("short-card")) return false;
-        setActivePage(true);
+        setActivePage("shorts");
         target.scrollIntoView();
         window.requestAnimationFrame(activateMostVisibleShort);
         return true;
@@ -2064,9 +2551,10 @@
 
       document.querySelectorAll(".page-tab[data-page]").forEach((tab) => {
         tab.addEventListener("click", () => {
-          setActivePage(tab.dataset.page === "shorts");
+          setActivePage(tab.dataset.page);
         });
       });
+      channelBackButton.addEventListener("click", showChannelDirectory);
 
       shortsAccountToggle.addEventListener("click", () => {
         if (!accountPanel.open) {
@@ -2078,6 +2566,9 @@
           "aria-expanded",
           String(accountPanel.open),
         );
+      });
+      shortsAudioToggle.addEventListener("click", () => {
+        setShortsSoundEnabled(!shortsSoundEnabled);
       });
       accountPanel.addEventListener("toggle", () => {
         shortsAccountToggle.setAttribute(
@@ -2130,7 +2621,7 @@
       }
 
       window.addEventListener("hashchange", showShortFromHash);
-      if (!showShortFromHash()) setActivePage(false);
+      if (!showShortFromHash()) setActivePage("videos");
       window.videoAppBridge = {
         supabaseClient,
         getCurrentUser: () => currentUser,
