@@ -210,3 +210,77 @@ grant execute on function public.complete_shorts_recovery_code(uuid, uuid)
   to service_role;
 grant execute on function public.release_shorts_recovery_code(uuid, uuid)
   to service_role;
+
+create table if not exists public.videos (
+  id uuid primary key default gen_random_uuid(),
+  title text not null check (char_length(btrim(title)) between 1 and 128),
+  video_url text not null check (
+    video_url ~ '^https://github[.]com/henkje23/video-s/releases/download/[^/]+/[^/]+[.]mp4$'
+  ),
+  type text not null check (type in ('video', 'short')),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  author_name text not null
+    check (char_length(btrim(author_name)) between 1 and 40),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists videos_type_created_idx
+  on public.videos (type, created_at desc);
+
+alter table public.videos enable row level security;
+
+drop policy if exists "Anyone can read videos" on public.videos;
+create policy "Anyone can read videos"
+  on public.videos for select to anon, authenticated
+  using (true);
+
+drop policy if exists "Users can add their own videos" on public.videos;
+create policy "Users can add their own videos"
+  on public.videos for insert to authenticated
+  with check (
+    (select auth.uid()) = user_id
+    and char_length(btrim(title)) between 1 and 128
+    and char_length(btrim(author_name)) between 1 and 40
+    and type in ('video', 'short')
+    and video_url ~ '^https://github[.]com/henkje23/video-s/releases/download/[^/]+/[^/]+[.]mp4$'
+    and author_name = left(
+      coalesce(
+        nullif(btrim((select auth.jwt()) -> 'user_metadata' ->> 'display_name'), ''),
+        split_part((select auth.jwt()) ->> 'email', '@', 1)
+      ),
+      40
+    )
+  );
+
+revoke all on public.videos from anon, authenticated;
+grant select on public.videos to anon, authenticated;
+grant insert on public.videos to authenticated;
+
+drop policy if exists "Users can remove their own videos" on public.videos;
+create policy "Users can remove their own videos"
+  on public.videos for delete to authenticated
+  using ((select auth.uid()) = user_id);
+
+grant delete on public.videos to authenticated;
+
+create table if not exists public.video_upload_sessions (
+  id uuid primary key default gen_random_uuid(),
+  release_id bigint not null unique,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  title text not null check (char_length(btrim(title)) between 1 and 128),
+  tag text not null check (tag ~ '^[a-z0-9-]{1,70}$'),
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.video_upload_sessions enable row level security;
+
+drop policy if exists "Users can read their own video upload sessions"
+  on public.video_upload_sessions;
+create policy "Users can read their own video upload sessions"
+  on public.video_upload_sessions for select to authenticated
+  using ((select auth.uid()) = user_id);
+
+revoke all on public.video_upload_sessions from anon, authenticated;
+grant select on public.video_upload_sessions to authenticated;
+grant all on public.video_upload_sessions to service_role;

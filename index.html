@@ -17,6 +17,7 @@
       href="./app-icon-192.png"
     />
     <link rel="apple-touch-icon" href="./app-icon-192.png" />
+    <link rel="stylesheet" href="./upload.css" />
     <style>
       :root {
         color-scheme: dark;
@@ -687,6 +688,10 @@
         <h1>Al mijn video's</h1>
         <p>Een overzicht van mijn video's.</p>
       </header>
+      <div id="account-info-bar" class="account-info-bar" hidden>
+        <span class="account-info-name" id="account-info-name"></span>
+        <span class="account-info-email" id="account-info-email"></span>
+      </div>
       <nav class="page-tabs" aria-label="Videopagina">
         <button
           class="page-tab"
@@ -733,7 +738,79 @@
         <button id="install-app-button" class="page-tab" type="button" hidden>
           Installeren
         </button>
+        <button
+          id="upload-open-button"
+          class="page-tab upload-open-button"
+          type="button"
+        >
+          <span aria-hidden="true">+</span> Video maken
+        </button>
       </nav>
+      <dialog
+        id="upload-dialog"
+        class="upload-dialog"
+        aria-labelledby="upload-dialog-title"
+      >
+        <form id="video-upload-form" class="upload-form">
+          <div class="upload-heading">
+            <div>
+              <p class="eyebrow">Nieuw bericht</p>
+              <h2 id="upload-dialog-title">Video uploaden</h2>
+            </div>
+            <button
+              id="upload-close-button"
+              class="upload-close-button"
+              type="button"
+              aria-label="Venster sluiten"
+            >
+              ×
+            </button>
+          </div>
+          <label for="upload-title">Titel</label>
+          <input
+            id="upload-title"
+            name="title"
+            type="text"
+            maxlength="120"
+            required
+          />
+          <label for="upload-type">Type</label>
+          <select id="upload-type" name="type" required>
+            <option value="video">Video</option>
+            <option value="short">Short</option>
+          </select>
+          <label for="upload-file">Videobestand (.mp4, maximaal 50 MB)</label>
+          <input
+            id="upload-file"
+            name="file"
+            type="file"
+            accept=".mp4,video/mp4"
+            required
+          />
+          <p id="upload-compress-help" class="upload-compress-help" hidden>
+            Dit bestand is te groot. Verklein het eerst op je computer met
+            <a href="https://handbrake.fr/downloads.php" target="_blank" rel="noopener noreferrer">HandBrake (gratis MP4-compressor)</a>
+            en kies daarna het kleinere MP4-bestand. Je hoeft je video niet naar een online compressor te sturen.
+          </p>
+          <div id="upload-progress-area" class="upload-progress-area" hidden>
+            <progress id="upload-progress" max="100" value="0">0%</progress>
+            <span id="upload-progress-label">0%</span>
+          </div>
+          <p
+            id="upload-status"
+            class="upload-status"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <button
+            id="upload-submit-button"
+            class="upload-submit-button"
+            type="submit"
+          >
+            Uploaden
+          </button>
+        </form>
+      </dialog>
       <form id="video-search" class="video-search" role="search">
         <input
           id="video-search-input"
@@ -743,7 +820,12 @@
           aria-label="Zoek video's en Shorts op titel"
           aria-controls="videos-list shorts-feed"
         />
-        <button id="clear-video-search" type="button" aria-label="Zoekopdracht wissen" hidden>
+        <button
+          id="clear-video-search"
+          type="button"
+          aria-label="Zoekopdracht wissen"
+          hidden
+        >
           Wissen
         </button>
       </form>
@@ -840,11 +922,15 @@
       </details>
       <section id="videos-page" aria-label="Video's">
         <div class="videos-list" id="videos-list"></div>
-        <p id="videos-search-empty" class="search-empty" hidden>Geen video's gevonden.</p>
+        <p id="videos-search-empty" class="search-empty" hidden>
+          Geen video's gevonden.
+        </p>
       </section>
       <section id="shorts-page" aria-label="Shorts" hidden>
         <div class="shorts-feed" id="shorts-feed"></div>
-        <p id="shorts-search-empty" class="search-empty" hidden>Geen Shorts gevonden.</p>
+        <p id="shorts-search-empty" class="search-empty" hidden>
+          Geen Shorts gevonden.
+        </p>
       </section>
     </main>
     <script src="./supabase-config.js"></script>
@@ -888,6 +974,9 @@
       const videosSearchEmpty = document.querySelector("#videos-search-empty");
       const shortsSearchEmpty = document.querySelector("#shorts-search-empty");
       const accountSummary = document.querySelector("#account-summary");
+      const accountInfoBar = document.querySelector("#account-info-bar");
+      const accountInfoName = document.querySelector("#account-info-name");
+      const accountInfoEmail = document.querySelector("#account-info-email");
       const accountStatus = document.querySelector("#account-status");
       const accountFields = document.querySelector(".account-fields");
       const signInButton = document.querySelector("#sign-in-button");
@@ -922,12 +1011,17 @@
       let currentUser = null;
       const shortCards = [];
       const videoCards = [];
+      const communityCards = [];
+      const renderedUploadedVideoIds = new Set();
       let activeShortFrame = null;
       let installPromptEvent = null;
 
       function stopActiveShort() {
         if (!activeShortFrame) return;
         activeShortFrame.src = "about:blank";
+        if (activeShortFrame instanceof HTMLVideoElement) {
+          activeShortFrame.load();
+        }
         activeShortFrame = null;
       }
 
@@ -962,6 +1056,7 @@
 
         stopActiveShort();
         candidate.src = candidate.dataset.src;
+        if (candidate instanceof HTMLVideoElement) candidate.load();
         activeShortFrame = candidate;
       }
 
@@ -997,10 +1092,8 @@
           return count + Number(matches);
         }, 0);
 
-        videosSearchEmpty.hidden =
-          query.length === 0 || visibleVideoCount > 0;
-        shortsSearchEmpty.hidden =
-          query.length === 0 || visibleShortCount > 0;
+        videosSearchEmpty.hidden = query.length === 0 || visibleVideoCount > 0;
+        shortsSearchEmpty.hidden = query.length === 0 || visibleShortCount > 0;
         shortsFeed.hidden = query.length > 0 && visibleShortCount === 0;
         if (document.body.classList.contains("shorts-mode")) {
           if (query) shortsFeed.scrollTop = 0;
@@ -1041,7 +1134,14 @@
       function renderAccount(user) {
         currentUser = user;
         if (user) {
-          accountSummary.textContent = `Ingelogd als ${user.user_metadata?.display_name || user.email}`;
+          const displayName =
+            user.user_metadata?.display_name ||
+            user.email?.split("@")[0] ||
+            "Gebruiker";
+          accountSummary.textContent = `Ingelogd als ${displayName}`;
+          accountInfoName.textContent = displayName;
+          accountInfoEmail.textContent = user.email || "";
+          accountInfoBar.hidden = false;
           accountFields.hidden = true;
           signInButton.hidden = true;
           signUpButton.hidden = true;
@@ -1050,12 +1150,20 @@
           setAccountStatus("Je kunt nu likes geven en reacties plaatsen.");
         } else {
           accountSummary.textContent = "Inloggen om te liken en reageren";
+          accountInfoBar.hidden = true;
           accountFields.hidden = false;
           signInButton.hidden = false;
           signUpButton.hidden = false;
           newRecoveryCodeButton.hidden = true;
           signOutButton.hidden = true;
         }
+        for (const communityCard of communityCards) {
+          if (communityCard.deleteButton) {
+            communityCard.deleteButton.hidden =
+              !user || user.id !== communityCard.short.user_id;
+          }
+        }
+        window.videoUploadController?.setUser(user);
       }
 
       async function createRecoveryCode() {
@@ -1175,6 +1283,319 @@
         }
       }
 
+      function buildUploadedCommunityControls(item, card) {
+        const actions = document.createElement("div");
+        actions.className =
+          item.type === "short" ? "short-actions" : "video-community-actions";
+        const likeButton = document.createElement("button");
+        likeButton.className = "short-action";
+        likeButton.type = "button";
+        likeButton.setAttribute("aria-label", `Like ${item.title}`);
+        const likeIcon = document.createElement("span");
+        likeIcon.className = "short-action-icon";
+        likeIcon.setAttribute("aria-hidden", "true");
+        likeIcon.textContent = "♡";
+        const likeLabel = document.createElement("span");
+        likeLabel.className = "short-action-label";
+        likeLabel.textContent = "0 likes";
+        likeButton.append(likeIcon, likeLabel);
+
+        const commentButton = document.createElement("button");
+        commentButton.className = "short-action";
+        commentButton.type = "button";
+        commentButton.setAttribute("aria-label", `Reacties op ${item.title}`);
+        commentButton.setAttribute("aria-expanded", "false");
+        const commentIcon = document.createElement("span");
+        commentIcon.className = "short-action-icon";
+        commentIcon.setAttribute("aria-hidden", "true");
+        commentIcon.textContent = "▱";
+        const commentLabel = document.createElement("span");
+        commentLabel.className = "short-action-label";
+        commentLabel.textContent = "0 reacties";
+        commentButton.append(commentIcon, commentLabel);
+        actions.append(likeButton, commentButton);
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "short-action delete-video-button";
+        deleteButton.type = "button";
+        deleteButton.textContent = "Verwijderen";
+        deleteButton.setAttribute(
+          "aria-label",
+          `Verwijder ${item.title} van de website`,
+        );
+        deleteButton.hidden = !currentUser || currentUser.id !== item.user_id;
+        actions.append(deleteButton);
+
+        const commentPanel = document.createElement("section");
+        commentPanel.className = "short-comments";
+        commentPanel.hidden = true;
+        commentPanel.setAttribute("aria-label", `Reacties op ${item.title}`);
+        const commentForm = document.createElement("form");
+        commentForm.className = "short-comment-form";
+        const commentInput = document.createElement("input");
+        commentInput.className = "short-comment-input";
+        commentInput.type = "text";
+        commentInput.maxLength = 500;
+        commentInput.placeholder = "Schrijf een reactie";
+        commentInput.setAttribute("aria-label", "Schrijf een reactie");
+        commentInput.required = true;
+        const submitComment = document.createElement("button");
+        submitComment.type = "submit";
+        submitComment.textContent = "Plaatsen";
+        commentForm.append(commentInput, submitComment);
+        const commentList = document.createElement("ul");
+        commentList.className = "short-comment-list";
+        commentPanel.append(commentForm, commentList);
+
+        const status = document.createElement("p");
+        status.className =
+          item.type === "short" ? "short-status" : "video-community-status";
+        status.setAttribute("role", "status");
+        status.setAttribute("aria-live", "polite");
+
+        const communityCard = {
+          short: item,
+          card,
+          likeButton,
+          commentButton,
+          commentList,
+          commentPanel,
+          commentInput,
+          status,
+          deleteButton,
+          liked: false,
+          likeCount: 0,
+          commentCount: 0,
+          comments: [],
+        };
+        communityCards.push(communityCard);
+
+        likeButton.addEventListener("click", async () => {
+          if (!currentUser) {
+            accountPanel.open = true;
+            setAccountStatus("Log in om deze video te liken.");
+            accountEmail.focus();
+            return;
+          }
+          likeButton.disabled = true;
+          const result = communityCard.liked
+            ? await supabaseClient
+                .from("shorts_likes")
+                .delete()
+                .eq("short_id", item.id)
+                .eq("user_id", currentUser.id)
+            : await supabaseClient
+                .from("shorts_likes")
+                .insert({ short_id: item.id, user_id: currentUser.id });
+          likeButton.disabled = false;
+          if (result.error) {
+            status.textContent = `Like opslaan mislukt: ${result.error.message}`;
+            return;
+          }
+          await refreshShortCard(communityCard);
+        });
+
+        commentButton.addEventListener("click", () => {
+          commentPanel.hidden = !commentPanel.hidden;
+          commentButton.setAttribute(
+            "aria-expanded",
+            String(!commentPanel.hidden),
+          );
+          if (!commentPanel.hidden) {
+            refreshComments(communityCard);
+            if (currentUser) commentInput.focus();
+          }
+        });
+
+        commentForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          if (!currentUser) {
+            accountPanel.open = true;
+            setAccountStatus("Log in om een reactie te plaatsen.");
+            accountEmail.focus();
+            return;
+          }
+          const body = commentInput.value.trim();
+          if (!body) return;
+          submitComment.disabled = true;
+          try {
+            const { error } = await supabaseClient
+              .from("shorts_comments")
+              .insert({
+                short_id: item.id,
+                user_id: currentUser.id,
+                display_name:
+                  currentUser.user_metadata?.display_name ||
+                  currentUser.email.split("@")[0],
+                body,
+              });
+            if (error) {
+              status.textContent = `Reactie plaatsen mislukt: ${error.message}`;
+              return;
+            }
+            commentInput.value = "";
+            await refreshComments(communityCard);
+            commentInput.focus();
+          } catch (error) {
+            status.textContent = `Reactie plaatsen mislukt: ${error.message}`;
+          } finally {
+            submitComment.disabled = false;
+          }
+        });
+
+        deleteButton.addEventListener("click", async () => {
+          if (!currentUser || currentUser.id !== item.user_id) {
+            deleteButton.hidden = true;
+            return;
+          }
+          if (
+            !window.confirm(
+              `Verwijder "${item.title}" van de website? De video blijft in GitHub Releases staan.`,
+            )
+          ) {
+            return;
+          }
+
+          deleteButton.disabled = true;
+          status.textContent = "Video wordt van de website verwijderd...";
+          try {
+            const { data, error } = await supabaseClient
+              .from("videos")
+              .delete()
+              .eq("id", item.id)
+              .eq("user_id", currentUser.id)
+              .select("id")
+              .maybeSingle();
+            if (error || !data) {
+              status.textContent = error
+                ? `Verwijderen mislukt: ${error.message}`
+                : "De video is niet verwijderd. Controleer of je de eigenaar bent.";
+              return;
+            }
+          } catch (error) {
+            status.textContent = `Verwijderen mislukt: ${error.message}`;
+            return;
+          } finally {
+            deleteButton.disabled = false;
+          }
+
+          if (item.type === "short") {
+            const shortCard = shortCards.find(
+              (entry) => entry.short.id === item.id,
+            );
+            if (shortCard) {
+              shortObserver.unobserve(shortCard.card);
+              if (activeShortFrame === shortCard.frame) stopActiveShort();
+              shortCards.splice(shortCards.indexOf(shortCard), 1);
+            }
+          } else {
+            const videoCard = videoCards.find(
+              (entry) => entry.video.id === item.id,
+            );
+            if (videoCard) videoCards.splice(videoCards.indexOf(videoCard), 1);
+          }
+          communityCards.splice(communityCards.indexOf(communityCard), 1);
+          renderedUploadedVideoIds.delete(item.id);
+          card.remove();
+          if (item.type === "short" && shortCards.length === 0) {
+            const emptyMessage = document.createElement("p");
+            emptyMessage.className = "shorts-empty";
+            emptyMessage.textContent = "Nog geen Shorts.";
+            shortsFeed.append(emptyMessage);
+          }
+          filterVideos();
+          window.requestAnimationFrame(activateMostVisibleShort);
+        });
+
+        card.append(actions, status, commentPanel);
+        renderShortCard(communityCard);
+        return communityCard;
+      }
+
+      function renderUploadedVideo(record) {
+        const item = {
+          id: record.id,
+          title: record.title,
+          type: record.type,
+          video_url: record.video_url,
+          author_name: record.author_name,
+          user_id: record.user_id,
+        };
+        if (
+          renderedUploadedVideoIds.has(item.id) ||
+          !item.id ||
+          !item.title ||
+          !item.video_url ||
+          !["video", "short"].includes(item.type)
+        ) {
+          return;
+        }
+        renderedUploadedVideoIds.add(item.id);
+
+        const card = document.createElement("article");
+        card.dataset.title = item.title;
+        const title = document.createElement("h2");
+        title.textContent = item.title;
+        if (item.type === "short") {
+          card.className = "short-card";
+          card.id = `short-${item.id}`;
+          const player = document.createElement("video");
+          player.className = "short-frame";
+          player.controls = true;
+          player.playsInline = true;
+          player.preload = "none";
+          player.dataset.src = item.video_url;
+          player.src = "about:blank";
+          title.textContent = `${item.title} · ${item.author_name}`;
+          card.append(player, title);
+          const communityCard = buildUploadedCommunityControls(item, card);
+          communityCard.frame = player;
+          shortCards.push(communityCard);
+          if (shortsFeed.querySelector(".shorts-empty")) {
+            shortsFeed.querySelector(".shorts-empty").remove();
+          }
+          shortsFeed.append(card);
+          shortObserver.observe(card);
+        } else {
+          card.className = "video-card uploaded-video-card";
+          const player = document.createElement("video");
+          player.className = "video-frame";
+          player.controls = true;
+          player.playsInline = true;
+          player.preload = "metadata";
+          player.src = item.video_url;
+          player.setAttribute("aria-label", item.title);
+          const author = document.createElement("p");
+          author.className = "uploaded-video-author";
+          author.textContent = `Door ${item.author_name}`;
+          card.append(title, player, author);
+          const communityCard = buildUploadedCommunityControls(item, card);
+          videosList.append(card);
+          videoCards.push({ video: item, card, communityCard });
+        }
+        filterVideos();
+        const communityCard = communityCards.find(
+          (entry) => entry.short.id === item.id,
+        );
+        if (communityCard?.deleteButton) {
+          communityCard.deleteButton.hidden =
+            !currentUser || currentUser.id !== item.user_id;
+        }
+        if (communityCard) refreshShortCard(communityCard);
+      }
+
+      async function loadUploadedVideos() {
+        if (!supabaseClient) return;
+        const { data, error } = await supabaseClient
+          .from("videos")
+          .select("id, title, video_url, type, author_name, user_id")
+          .order("created_at", { ascending: true });
+        if (error) {
+          setAccountStatus(`Video's laden mislukt: ${error.message}`, true);
+          return;
+        }
+        for (const record of data) renderUploadedVideo(record);
+      }
+
       async function loadAuthSession() {
         if (!supabaseClient) {
           accountPanel.open = true;
@@ -1196,7 +1617,8 @@
           return;
         }
         renderAccount(data.session?.user ?? null);
-        await Promise.all(shortCards.map(refreshShortCard));
+        await Promise.all(communityCards.map(refreshShortCard));
+        await loadUploadedVideos();
       }
 
       async function authenticate(action) {
@@ -1342,9 +1764,9 @@
           return;
         }
         renderAccount(null);
-        for (const shortCard of shortCards) {
-          shortCard.liked = false;
-          renderShortCard(shortCard);
+        for (const communityCard of communityCards) {
+          communityCard.liked = false;
+          renderShortCard(communityCard);
         }
         setAccountStatus("Je bent uitgelogd.");
       });
@@ -1352,10 +1774,10 @@
       if (supabaseClient) {
         supabaseClient.auth.onAuthStateChange((_event, session) => {
           renderAccount(session?.user ?? null);
-          window.setTimeout(
-            () => Promise.all(shortCards.map(refreshShortCard)),
-            0,
-          );
+          window.setTimeout(() => {
+            Promise.all(communityCards.map(refreshShortCard));
+            loadUploadedVideos();
+          }, 0);
         });
       }
 
@@ -1382,7 +1804,7 @@
         const emptyMessage = document.createElement("p");
         emptyMessage.className = "shorts-empty";
         emptyMessage.textContent =
-          'Nog geen Shorts. Voeg een video toe aan de "videos"-lijst in de code.';
+          "Nog geen Shorts. Log in en upload de eerste via + Video maken.";
         shortsFeed.append(emptyMessage);
       }
 
@@ -1483,6 +1905,7 @@
         };
         shortCard.commentPanel.hidden = true;
         shortCards.push(shortCard);
+        communityCards.push(shortCard);
 
         likeButton.addEventListener("click", async () => {
           if (!currentUser) {
@@ -1594,10 +2017,12 @@
       if (shorts.length > 0) loadAuthSession();
 
       searchInput.addEventListener("input", filterVideos);
-      document.querySelector(".video-search").addEventListener("submit", (event) => {
-        event.preventDefault();
-        searchInput.focus();
-      });
+      document
+        .querySelector(".video-search")
+        .addEventListener("submit", (event) => {
+          event.preventDefault();
+          searchInput.focus();
+        });
       clearSearchButton.addEventListener("click", () => {
         searchInput.value = "";
         filterVideos();
@@ -1706,6 +2131,25 @@
 
       window.addEventListener("hashchange", showShortFromHash);
       if (!showShortFromHash()) setActivePage(false);
+      window.videoAppBridge = {
+        supabaseClient,
+        getCurrentUser: () => currentUser,
+        getAuthorName: () =>
+          (
+            currentUser?.user_metadata?.display_name ||
+            currentUser?.email?.split("@")[0] ||
+            "Gebruiker"
+          )
+            .trim()
+            .slice(0, 40),
+        renderUploadedVideo,
+        loadUploadedVideos,
+        openAccount: () => {
+          accountPanel.open = true;
+          accountEmail.focus();
+        },
+      };
     </script>
+    <script src="./upload.js"></script>
   </body>
 </html>

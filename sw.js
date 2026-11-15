@@ -1,4 +1,4 @@
-const CACHE_NAME = "mijn-videos-shell-v1";
+const CACHE_NAME = "mijn-videos-shell-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -7,6 +7,8 @@ const APP_SHELL = [
   "./app-icon-192.png",
   "./app-icon-512.png",
   "./supabase-config.js",
+  "./upload.css",
+  "./upload.js",
 ];
 
 self.addEventListener("install", (event) => {
