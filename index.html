@@ -2777,6 +2777,107 @@
           accountEmail.focus();
         },
       };
+      function maakYouTubeSpeler(video) {
+  // Voorkom dat dezelfde video twee keer wordt omgebouwd
+  if (video.dataset.ytStyled) return;
+  video.dataset.ytStyled = 'true';
+
+  // Verberg de standaard browser-knoppen
+  video.removeAttribute('controls');
+
+  // Maak de nieuwe container en plaats de video erin
+  const player = document.createElement('div');
+  player.className = 'yt-player';
+  video.parentNode.insertBefore(player, video);
+  player.appendChild(video);
+
+  // Voeg de blauwgroene knoppen en balk toe
+  player.insertAdjacentHTML('beforeend', `
+    <div class="yt-center-play">▶</div>
+    <div class="yt-controls">
+      <div class="yt-progress-area">
+        <div class="yt-progress-bar">
+          <div class="yt-progress-thumb"></div>
+        </div>
+      </div>
+      <div class="yt-buttons-row">
+        <div class="yt-left">
+          <button class="yt-play-btn" title="Afspelen">▶</button>
+          <button class="yt-mute-btn" title="Geluid">🔊</button>
+          <span class="yt-time">0:00 / 0:00</span>
+        </div>
+        <div class="yt-right">
+          <button class="yt-fs-btn" title="Volledig scherm">⛶</button>
+        </div>
+      </div>
+    </div>
+  `);
+
+  const playBtn = player.querySelector('.yt-play-btn');
+  const centerPlay = player.querySelector('.yt-center-play');
+  const muteBtn = player.querySelector('.yt-mute-btn');
+  const fsBtn = player.querySelector('.yt-fs-btn');
+  const progressArea = player.querySelector('.yt-progress-area');
+  const progressBar = player.querySelector('.yt-progress-bar');
+  const timeDisplay = player.querySelector('.yt-time');
+
+  function togglePlay() {
+    if (video.paused) {
+      video.play();
+      playBtn.textContent = '⏸';
+      player.classList.add('playing');
+    } else {
+      video.pause();
+      playBtn.textContent = '▶';
+      player.classList.remove('playing');
+    }
+  }
+
+  function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  video.addEventListener('click', togglePlay);
+  playBtn.addEventListener('click', togglePlay);
+  centerPlay.addEventListener('click', togglePlay);
+
+  video.addEventListener('timeupdate', () => {
+    if (!video.duration) return;
+    const percent = (video.currentTime / video.duration) * 100;
+    progressBar.style.width = `${percent}%`;
+    timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+  });
+
+  progressArea.addEventListener('click', (e) => {
+    const rect = progressArea.getBoundingClientRect();
+    video.currentTime = ((e.clientX - rect.left) / rect.width) * video.duration;
+  });
+
+  muteBtn.addEventListener('click', () => {
+    video.muted = !video.muted;
+    muteBtn.textContent = video.muted ? '🔇' : '🔊';
+  });
+
+  fsBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      player.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  });
+}
+
+// 1. Pas direct toe op video's die al op de pagina staan
+document.querySelectorAll('video').forEach(maakYouTubeSpeler);
+
+// 2. Wacht automatisch op video's die later via GitHub worden ingeladen
+const observer = new MutationObserver(() => {
+  document.querySelectorAll('video').forEach(maakYouTubeSpeler);
+});
+observer.observe(document.body, { childList: true, subtree: true });
+
     </script>
     <script src="./upload.js"></script>
     <script>
