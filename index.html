@@ -2642,24 +2642,35 @@
       };
     </script>
     <script src="./upload.js"></script>
-      <script>
-      // Fix voor iPhone en Chrome autoplay
-      setInterval(() => {
-        document.querySelectorAll('video').forEach(video => {
-          video.playsInline = true;
-          video.setAttribute('playsinline', '');
+    <script>
+  // Verbeterde interval-fix specifiek voor iPhone Safari
+  setInterval(() => {
+    document.querySelectorAll('video').forEach(video => {
+      if (!video.dataset.iphoneFixGedaan) {
+        video.dataset.iphoneFixGedaan = 'true';
+        
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        video.setAttribute('muted', '');
+        video.setAttribute('autoplay', '');
+        video.setAttribute('preload', 'auto');
+        
+        video.playsInline = true;
+        video.muted = true;
+        video.defaultMuted = true;
 
-          if (!video.dataset.iphoneFixGedaan) {
-            video.muted = true;
-            video.setAttribute('muted', '');
-            video.dataset.iphoneFixGedaan = 'true';
-          }
+        if (video.src || video.querySelector('source')) {
+          video.load();
+        }
+      }
 
-          if (video.paused && !video.dataset.handmatigGepauzeerd) {
-            video.play().catch(() => {});
-          }
+      if (video.paused && !video.dataset.handmatigGepauzeerd && video.readyState >= 2) {
+        video.play().catch(() => {
+          video.controls = true;
         });
-      }, 500);
-      </script>
+      }
+    });
+  }, 500);
+</script>
   </body>
 </html>
